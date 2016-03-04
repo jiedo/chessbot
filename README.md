@@ -66,6 +66,17 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
     $ mkfifo fifo
     $ python2.7 -u ./chessbot.py -w < fifo | python2.7 -u ./chessbot.py > fifo
 
+用nc可实现远程对弈.
+
+    # hostA, 选择白方, 先建立监听:
+    $ mkfifo fifo
+    $ python2.7 -u ./chessbot.py -w < fifo | nc -l -p 8002 > fifo
+
+    # hostB 为黑方:
+    $ mkfifo fifo
+    $ python2.7 -u ./chessbot.py < fifo | nc hostA 8002 > fifo
+
+
 ## 结果展示
 
     START
