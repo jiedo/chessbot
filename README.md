@@ -14,11 +14,18 @@ A bot can play gobang(五子棋) with another chessbot. You can write strategy f
 
 ## 运行方式
 
-    $ python ./chessbot
-
 chessbot读取stdin, 得到对方落子位置. 然后将自己落子位置输出到stdout.
 
-chessbot支持和另一个chessbot对弈, 绑定双方stdin和stdout即可. 当一方胜利后, chessbot退出.
+    $ python -u ./chessbot.py
+
+支持参数 -w , 表示选择白方.
+
+    $ python -u ./chessbot.py -w
+
+chessbot支持和另一个chessbot对弈, 绑定双方stdin和stdout即可. 必须有一方选择白方. 当一方胜利后, chessbot退出.
+
+    $ mkfifo fifo
+    $ python2.7 -u ./chessbot.py -w < fifo | tee /dev/stderr | python2.7 -u ./chessbot.py | tee /dev/stderr > fifo
 
 
 ## 使用文本操作命令
@@ -41,6 +48,3 @@ chessbot支持和另一个chessbot对弈, 绑定双方stdin和stdout即可. 当�
     def strategy():
         a, b = 1, 1
         return a, b
-
-
-##
