@@ -17,11 +17,23 @@ A bot can play gobang(五子棋) with another chessbot. You can write a strategy
     PUT h w X/O
 
 表示落子到棋盘坐标(h, w), 黑白双方都使用同样的命令落子. 命令末尾附带X或O表示黑方或白方.
+
 其中h为数字; w为数字,或者为序数是w的小写英文字母. 序数从0开始.
 
     START
 
 表示开局, 收到开局命令的bot为黑方. 未收到而直接收到 PUT 的为白方.
+
+
+
+## AI实现
+
+chessbot.py中的函数strategy()在己方应该下棋时调用, 可分析棋盘, 并返回落子位置.
+请修改如下函数, 实现自己的AI.
+
+    def strategy():
+        h, w = 1, 1
+        return h, w
 
 
 ## 运行方式
@@ -40,11 +52,27 @@ chessbot支持和另一个chessbot对弈, 绑定双方stdin和stdout即可. 必�
     $ python2.7 -u ./chessbot.py -w < fifo | tee /dev/stderr | python2.7 -u ./chessbot.py | tee /dev/stderr > fifo
 
 
-## AI
+## 结果展示
 
-chessbot.py中的函数strategy()在己方应该下棋时调用, 可分析棋盘, 并返回落子位置.
-请修改如下函数, 实现自己的AI.
-
-    def strategy():
-        h, w = 1, 1
-        return h, w
+    PUT 4 e X
+       a b c d e f g h i j k l m n o p q
+       _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+     0|X
+     1|  X
+     2|    X
+     3|      X
+     4|        X
+     5|
+     6|
+     7|
+     8|
+     9|
+    10|
+    11|
+    12|
+    13|
+    14|
+    15|
+    16|                          O O O O
+       _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      X Win.
