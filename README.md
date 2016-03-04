@@ -2,6 +2,10 @@
 
 A bot can play gobang(五子棋) with another chessbot. You can write a strategy for it to make it smarter.
 
+chessbot作为独立运行的peer启动, 与另一个chessbot互联对弈, 不需要中心服务器.
+
+## 背景
+
 棋盘使用直角坐标系来记录棋子位置. 棋盘范围为: Height * Width.
 原点(0, 0)在左上角, H轴方向向下, W轴方向向右.
 
@@ -23,16 +27,16 @@ A bot can play gobang(五子棋) with another chessbot. You can write a strategy
 
     START
 
-表示开局, 收到开局命令的bot为黑方. 未收到而直接收到 PUT 的为白方.
+表示开局, 收到 START 的bot为黑方. 而直接收到 PUT 的为白方.
 
 
 ## AI实现
 
 chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. 留出strategy()在己方应该下棋时调用, strategy只需分析棋盘, 并返回落子位置.
 
-棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 会根据通信内容自动更新.
+棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 棋盘会在通信时自动更新.
 
-可修改如下函数, 实现自己的AI.
+可修改如下strategy函数, 实现自己的AI.
 
     def strategy(self):
         # 棋盘:
@@ -49,7 +53,7 @@ chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. �
 
 ## 运行方式
 
-暂时实现为通过stdin/stdout通信. chessbot读取stdin, 得到对方落子位置. 然后将自己落子位置输出到stdout.
+chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得到对方落子位置. 然后将自己落子位置输出到stdout.
 
     $ python -u ./chessbot.py
 
@@ -57,11 +61,10 @@ chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. �
 
     $ python -u ./chessbot.py -w
 
-chessbot支持和另一个chessbot对弈, 绑定双方stdin和stdout即可. 必须有一方选择白方. 当一方胜利后, chessbot退出.
+对弈时, 绑定双方stdin和stdout即可. 注意必须有一方选择白方. 当一方胜利后, chessbot.py自动退出.
 
     $ mkfifo fifo
-    $ python2.7 -u ./chessbot.py -w < fifo | tee /dev/stderr | python2.7 -u ./chessbot.py | tee /dev/stderr > fifo
-
+    $ python2.7 -u ./chessbot.py -w < fifo | python2.7 -u ./chessbot.py > fifo
 
 ## 结果展示
 

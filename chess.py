@@ -35,8 +35,8 @@ def chess_log(msg, op_side=" "):
 
 
 def chess_operate(op):
+    chess_log(op)
     print op
-
 
 class Bot():
     def __init__(self):
