@@ -28,11 +28,11 @@ A bot can play gobang(五子棋) with another chessbot. You can write a strategy
 
 ## AI实现
 
-chessbot.py中的函数strategy()在己方应该下棋时调用, 可分析棋盘, 并返回落子位置.
+chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. 留出strategy()在己方应该下棋时调用, 分析棋盘, 并返回落子位置.
 
 棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 会根据通信内容自动更新.
 
-请修改如下函数, 实现自己的AI.
+可修改如下函数, 实现自己的AI.
 
     def strategy(self):
         # 棋盘:
@@ -43,6 +43,9 @@ chessbot.py中的函数strategy()在己方应该下棋时调用, 可分析棋盘
             for w in range(chess.WIDTH):
                 if self.board[h][w] == chess.BLANK:
                     return h, w
+
+或者重写main函数, 仅仅使用chess.Bot代码来构建非简单回调strategy的AI, 只要依据回合制顺序通信即可.
+
 
 ## 运行方式
 
