@@ -137,7 +137,7 @@ class Bot():
                 if self.board[i][j] != test_side:
                     continue
 
-                # row
+                # test row (-)
                 counter = 1
                 for k in range(j):
                     if self.board[i][j-k-1] != test_side:
@@ -150,7 +150,7 @@ class Bot():
                 if counter >= WIN_NUM:
                     return True
 
-                # col
+                # test col (|)
                 counter = 1
                 for k in range(i):
                     if self.board[i-k-1][j] != test_side:
@@ -163,7 +163,7 @@ class Bot():
                 if counter >= WIN_NUM:
                     return True
 
-                # up
+                # test up (/)
                 counter = 1
                 h = min(HEIGHT-i-1, j)
                 for k in range(h):
@@ -178,7 +178,7 @@ class Bot():
                 if counter >= WIN_NUM:
                     return True
 
-                # down
+                # test down (\)
                 counter = 1
                 h = min(i, j)
                 for k in range(h):
