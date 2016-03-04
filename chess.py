@@ -13,7 +13,7 @@ WIN_NUM = 5
 WIDTH = 17
 HEIGHT = 17
 
-OP_PUT = "OP_PUT"
+OP_PUT = "PUT"
 
 BOARD_MARKS = 'abcdefghijklmnopqrstuvwxyz'
 BOARD_MARKS_LENGTH = len(BOARD_MARKS)
@@ -21,13 +21,13 @@ BOARD_MARKS_LENGTH = len(BOARD_MARKS)
 assert (BOARD_MARKS_LENGTH > WIDTH)
 assert (BOARD_MARKS_LENGTH > HEIGHT)
 
-def idtoa(i):
-    if i < 0 or i > BOARD_MARKS_LENGTH:
-        return 0
-    return BOARD_MARKS[i]
+def idtoa(point_w):
+    if point_w < 0 or point_w > BOARD_MARKS_LENGTH:
+        return BOARD_MARKS[0]
+    return BOARD_MARKS[point_w]
 
-def atoid(a):
-    return BOARD_MARKS.find(a)
+def atoid(mark_w):
+    return BOARD_MARKS.find(str(mark_w))
 
 
 def chess_log(msg, op_side=" "):
@@ -59,29 +59,29 @@ class Bot():
         print >> sys.stderr, "   " + "_ " * WIDTH
 
 
-    def check_point(self, a, b):
-        if a < 0 or a >= HEIGHT:
-            chess_log("a out of range.")
+    def check_point(self, point_h, point_w):
+        if point_h < 0 or point_h >= HEIGHT:
+            chess_log("point_h out of range.")
             return False
 
-        if b < 0 or b >= WIDTH:
-            chess_log("b out of range.")
+        if point_w < 0 or point_w >= WIDTH:
+            chess_log("point_w out of range.")
             return False
 
-        if self.board[a][b] != BLANK:
-            chess_log("put twice. (%d, %d)" % (a, b))
+        if self.board[point_h][point_w] != BLANK:
+            chess_log("put twice. (%d, %d)" % (point_h, point_w))
             return False
         return True
 
 
-    def chess_put(self, a, b):
+    def chess_put(self, point_h, point_w):
         if self.b_next != self.b_my_side:
             chess_log("not my turn.")
             return False
 
-        if self.check_point(a, b):
-            self.board[a][b] = self.b_next
-            chess_operate("%s %d %s %s" % (OP_PUT, a, idtoa(b), self.b_next))
+        if self.check_point(point_h, point_w):
+            self.board[point_h][point_w] = self.b_next
+            chess_operate("%s %d %s %s" % (OP_PUT, point_h, idtoa(point_w), self.b_next))
             self.show_board()
 
             self.b_next = self.b_your_side
@@ -107,22 +107,26 @@ class Bot():
             return None, None
 
         try:
-            op_token, a, b, _ = line.split(" ", 3)
+            op_token, point_h, point_w, _ = line.split(" ", 3)
             if op_token == OP_PUT:
-                a = int(a)
-                b = atoid(b)
+                point_h = int(point_h)
+                x = atoid(point_w)
+                if x < 0:
+                    point_w = int(point_w)
+                else:
+                    point_w = x
 
         except Exception, e:
             chess_log("error(%s): %s" % (line, e))
             #sys.exit(1)
             return None, None
 
-        if op_token == OP_PUT and self.check_point(a, b):
+        if op_token == OP_PUT and self.check_point(point_h, point_w):
             self.b_started = True
-            self.board[a][b] = self.b_next
+            self.board[point_h][point_w] = self.b_next
             self.b_next = self.b_my_side
 
-            return a, b
+            return point_h, point_w
 
         return None, None
 
@@ -146,7 +150,6 @@ class Bot():
                 if counter >= WIN_NUM:
                     return True
 
-
                 # col
                 counter = 1
                 for k in range(i):
@@ -159,7 +162,6 @@ class Bot():
                     counter += 1
                 if counter >= WIN_NUM:
                     return True
-
 
                 # up
                 counter = 1
@@ -175,7 +177,6 @@ class Bot():
                     counter += 1
                 if counter >= WIN_NUM:
                     return True
-
 
                 # down
                 counter = 1

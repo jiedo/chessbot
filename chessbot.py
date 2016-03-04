@@ -19,7 +19,7 @@ def main():
     while True:
         # 首先读取对方的落子位置, 并写入棋盘
         while bot.b_next == bot.b_your_side:
-            a, b = bot.chess_get()
+            h, w = bot.chess_get()
             time.sleep(0.1)
 
         # 检测对方是否获胜
@@ -27,9 +27,9 @@ def main():
             break
 
         # 回调自己的策略
-        a, b = strategy(bot)
+        h, w = strategy(bot)
         # 写入棋盘并通知对方
-        bot.chess_put(a, b)
+        bot.chess_put(h, w)
 
         time.sleep(0.1)
         # 检测自己是否获胜
