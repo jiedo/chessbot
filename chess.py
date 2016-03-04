@@ -12,7 +12,7 @@ BLANK = " "
 WHITE = "O"
 BLACK = "X"
 OP_PUT = "PUT"
-BOARD_MARKS = 'abcdefghijklmnopqrstuvwxyz'
+BOARD_MARKS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 BOARD_MARKS_LENGTH = len(BOARD_MARKS)
 
 assert (BOARD_MARKS_LENGTH > WIDTH)
@@ -49,12 +49,12 @@ class Bot():
 
     def show_board(self):
         time.sleep(0.3)
+        print >> sys.stderr, "   " + "- " * WIDTH
+        for i in range(HEIGHT, 0, -1):
+            print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i-1]) + "|"
+        print >> sys.stderr, "   " + "- " * WIDTH
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
-        print >> sys.stderr, "   " + "_ " * WIDTH
-        for i in range(HEIGHT):
-            print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i])
-        print >> sys.stderr, "   " + "_ " * WIDTH
-
+        
 
     def check_point(self, point_h, point_w):
         if point_h < 0 or point_h >= HEIGHT:
@@ -76,7 +76,7 @@ class Bot():
 
         if self.check_point(point_h, point_w):
             self.board[point_h][point_w] = self.b_next
-            chess_operate("%s %d %s %s" % (OP_PUT, point_h, idtoa(point_w), self.b_next))
+            chess_operate("%s %s%d %s" % (OP_PUT, idtoa(point_w), point_h+1, self.b_next))
             self.b_next = self.b_your_side
             self.show_board()
             return True
@@ -101,13 +101,10 @@ class Bot():
             return None, None
 
         try:
-            op_token, point_h, point_w, _ = line.split(" ", 3)
-            point_h = int(point_h)
-            x = atoid(point_w)
-            if x < 0:
-                point_w = int(point_w)
-            else:
-                point_w = x
+            op_token, point_token, _ = line.split(" ", 2)
+            point_w, point_h = point_token[0], point_token[1:] 
+            point_h = int(point_h) - 1
+            point_w = atoid(point_w)
         except Exception, e:
             chess_log("error(%s): %s" % (line, e))
             return None, None
