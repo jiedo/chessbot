@@ -6,13 +6,13 @@ chessbot作为独立运行的peer启动, 与另一个chessbot互联对弈, 不�
 
 ## 背景
 
-棋盘使用直角坐标系来记录棋子位置. 棋盘范围为: Height * Width.
+棋盘使用直角坐标系来记录棋子位置. 棋盘范围为: HEIGHT * WIDTH.
 原点(0, 0)在左上角, H轴方向向下, W轴方向向右.
 
 棋子坐标(h, w)必须在棋盘范围内. 即:
 
-    0 <= h < height
-    0 <= w < width
+    0 <= h < HEIGHT
+    0 <= w < WIDTH
 
 参与方有黑方(X)和白方(O), 黑方先下.
 
