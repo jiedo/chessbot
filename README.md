@@ -109,5 +109,6 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
 
 ## TODO
 
+* 记录双方计算过程时间
 * 很容易实现一个chessbot前端, 实现人机对弈.
 * 增加其他棋类规则
