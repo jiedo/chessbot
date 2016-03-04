@@ -12,6 +12,7 @@ A bot can play gobang(五子棋) with another chessbot. You can write a strategy
 
 参与方有黑方(X)和白方(O), 黑方先下.
 
+
 ## AI通信协议
 
     PUT h w X/O
@@ -25,13 +26,18 @@ A bot can play gobang(五子棋) with another chessbot. You can write a strategy
 表示开局, 收到开局命令的bot为黑方. 未收到而直接收到 PUT 的为白方.
 
 
-
 ## AI实现
 
 chessbot.py中的函数strategy()在己方应该下棋时调用, 可分析棋盘, 并返回落子位置.
+
+棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 会根据通信内容自动更新.
+
 请修改如下函数, 实现自己的AI.
 
-    def strategy():
+    def strategy(self):
+        # 棋盘:
+        # self.board[h][w]
+
         h, w = 1, 1
         return h, w
 
