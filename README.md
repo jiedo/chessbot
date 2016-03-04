@@ -54,6 +54,11 @@ chessbot支持和另一个chessbot对弈, 绑定双方stdin和stdout即可. 必�
 
 ## 结果展示
 
+    START
+    PUT 0 a X
+    PUT 16 q O
+    ...
+    ...
     PUT 4 e X
        a b c d e f g h i j k l m n o p q
        _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
