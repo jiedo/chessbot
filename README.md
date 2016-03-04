@@ -1,6 +1,6 @@
 ## 简介
 
-A bot can play gobang(五子棋) with another chessbot. You can write strategy for it to make it smarter.
+A bot can play gobang(五子棋) with another chessbot. You can write a strategy for it to make it smarter.
 
 棋盘使用直角坐标系来记录棋子位置. 棋盘范围为: height * width.
 原点(0, 0)在左上角, A轴方向向下, B轴方向向右.
