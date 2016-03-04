@@ -28,7 +28,7 @@ A bot can play gobang(五子棋) with another chessbot. You can write a strategy
 
 ## AI实现
 
-chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. 留出strategy()在己方应该下棋时调用, 分析棋盘, 并返回落子位置.
+chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. 留出strategy()在己方应该下棋时调用, strategy只需分析棋盘, 并返回落子位置.
 
 棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 会根据通信内容自动更新.
 
