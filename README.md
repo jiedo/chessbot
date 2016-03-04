@@ -37,10 +37,12 @@ chessbot.py中的函数strategy()在己方应该下棋时调用, 可分析棋盘
     def strategy(self):
         # 棋盘:
         # self.board[h][w]
-
-        h, w = 1, 1
-        return h, w
-
+        # 此demo逻辑为顺序落子
+        #
+        for h in range(chess.HEIGHT):
+            for w in range(chess.WIDTH):
+                if self.board[h][w] == chess.BLANK:
+                    return h, w
 
 ## 运行方式
 
