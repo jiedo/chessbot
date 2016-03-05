@@ -55,7 +55,7 @@ chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. �
 chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得到对方落子位置. 然后将自己落子位置输出到stdout.
 
     $ python -u ./chessbot.py
-
+    
 支持参数 -w , 表示选择白方, 对方将成为黑方.
 
     $ python -u ./chessbot.py -w
@@ -74,6 +74,14 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
     # hostB 为黑方:
     $ mkfifo fifo
     $ python2.7 -u ./chessbot.py < fifo | nc hostA 8002 > fifo
+    
+支持参数 -v , 输出每一步棋盘.
+
+    $ python -u ./chessbot.py -v
+
+支持参数 -d , 输出调试错误.
+
+    $ python -u ./chessbot.py -d
 
 
 ## 结果展示
