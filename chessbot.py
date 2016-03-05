@@ -62,12 +62,28 @@ def main():
 def strategy(self):
     # 测试AI
     if self.b_my_side == chess.BLACK:
-        return strategy2(self)
+        return strategy3(self)
     else:
-        return strategy1(self)
+        return strategy0(self)
 
 
+def strategy0(self):
+    # 测试AI
+    # 同下， 连珠对附近空白有加分
+    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_your_side, dup=True)
+    if all_my_blank_points_count_pair:
+        pt, count = all_my_blank_points_count_pair[0]
+        if count >= 3:
+            return pt
 
+    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side, dup=True)
+    if not all_my_blank_points_count_pair:
+        random_point = (random.randint(0, chess.HEIGHT-1), random.randint(0, chess.WIDTH-1))
+        chess.chess_log("random_points: %s" % str(random_point), level="DEBUG")
+        return random_point
+    return all_my_blank_points_count_pair[0][0]
+
+    
 def strategy1(self):
     # 测试AI
     # 在对方所有棋子米字形线条交汇计数最多的空白处，计数超过3个时，进行防守放置

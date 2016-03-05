@@ -225,12 +225,26 @@ class Bot():
 
         # test row (-)
         blank_points = []
+        counter = 1
         for k in range(min(WIN_NUM-1, w)):
             pt = (h, w-k-1)
             if self.get_board(pt) == center_side:
-                pass
+                counter += 1
+            else:
+                break
+        for k in range(min(WIN_NUM-1, WIDTH-w-1)):
+            pt = (h, w+k+1)
+            if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break
+
+        for k in range(min(WIN_NUM-1, w)):
+            pt = (h, w-k-1)
+            if self.get_board(pt) == center_side:
+                counter = 1
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
         for k in range(min(WIN_NUM-1, WIDTH-w-1)):
@@ -238,17 +252,31 @@ class Bot():
             if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
 
         # test col (|)
+        counter = 1
+        for k in range(min(WIN_NUM-1, h)):
+            pt = (h-k-1, w)
+            if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break         
+        for k in range(min(WIN_NUM-1, WIDTH-h-1)):
+            pt = (h+k+1, w)
+            if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break         
+        
         for k in range(min(WIN_NUM-1, h)):
             pt = (h-k-1, w)
             if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
         for k in range(min(WIN_NUM-1, WIDTH-h-1)):
@@ -256,7 +284,7 @@ class Bot():
             if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
 
@@ -265,9 +293,24 @@ class Bot():
         for k in range(min_len):
             pt = (h+k+1, w-k-1)
             if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break         
+        min_len = min(WIN_NUM-1, h, WIDTH-w-1)
+        for k in range(min_len):
+            pt = (h-k-1, w+k+1)
+            if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break         
+        
+        min_len = min(WIN_NUM-1, HEIGHT-h-1, w)
+        for k in range(min_len):
+            pt = (h+k+1, w-k-1)
+            if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
         min_len = min(WIN_NUM-1, h, WIDTH-w-1)
@@ -276,7 +319,7 @@ class Bot():
             if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
 
@@ -285,9 +328,24 @@ class Bot():
         for k in range(min_len):
             pt = (h-k-1, w-k-1)
             if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break         
+        min_len = min(WIN_NUM-1, HEIGHT-h-1, WIDTH-w-1)
+        for k in range(min_len):
+            pt = (h+k+1, w+k+1)
+            if self.get_board(pt) == center_side:
+                counter += 1
+            else:
+                break         
+        
+        min_len = min(WIN_NUM-1, h, w)
+        for k in range(min_len):
+            pt = (h-k-1, w-k-1)
+            if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
         min_len = min(WIN_NUM-1, HEIGHT-h-1, WIDTH-w-1)
@@ -296,14 +354,14 @@ class Bot():
             if self.get_board(pt) == center_side:
                 pass
             elif self.get_board(pt) == BLANK:
-                blank_points += [pt]
+                blank_points += [(pt, counter)]
             else:
                 break
 
         return blank_points
 
 
-    def get_score_of_blanks_side(self, test_side):
+    def get_score_of_blanks_side(self, test_side, dup=False):
         all_my_points = []
         for h in range(HEIGHT):
             for w in range(WIDTH):
@@ -315,8 +373,10 @@ class Bot():
         all_my_blank_points_count = {}
         for point_h, point_w in all_my_points:
             blank_points_around_hw = self.all_blank_points_around(point_h, point_w)
-            for pt in blank_points_around_hw:
-                all_my_blank_points_count[pt] = all_my_blank_points_count.get(pt, 0) + 1
+            for pt, counter in blank_points_around_hw:
+                if not dup:
+                    counter = 1                
+                all_my_blank_points_count[pt] = all_my_blank_points_count.get(pt, 0) + counter
 
         if not all_my_blank_points_count:
             return []
