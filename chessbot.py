@@ -36,14 +36,19 @@ def main():
             
         # 检测对方是否获胜
         if bot.is_winner(bot.b_your_side):
-            bot.light_on_win_points()            
+            bot.light_on_win_points()
+            chess.chess_log("Notes: %d" % (len(bot.notes)))            
+            time.sleep(0.1)
+            bot.show_board()
             break
 
         # 回调自己的策略
         h, w = strategy(bot)
         # 写入棋盘并通知对方
         bot.chess_put(h, w)
-
+        if show_verbose:            
+            bot.show_board()
+            
         # 检测自己是否获胜
         if bot.is_winner(bot.b_my_side):
             chess.chess_log("%s Win." % bot.b_my_side)
@@ -53,7 +58,7 @@ def main():
 def strategy(self):
     # 测试AI
     if self.b_my_side == chess.BLACK:
-        return strategy0(self)
+        return strategy2(self)
     else:
         return strategy2(self)
 

@@ -9,12 +9,13 @@ WIDTH = 15
 HEIGHT = 15
 WIN_NUM = 5
 BLANK = " "
-WHITE = "."
-BLACK = "+"
+WHITE = "O"
+BLACK = "*"
 MARK_WIN = {
-    WHITE: "O",
-    BLACK: "X",
+    WHITE: "\033[32mO\033[0m",
+    BLACK: "\033[32m*\033[0m",
 }
+
 OP_PUT = "PUT"
 BOARD_MARKS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 BOARD_MARKS_LENGTH = len(BOARD_MARKS)
@@ -56,10 +57,10 @@ class Bot():
        
 
     def show_board(self):
-        print >> sys.stderr, "   " + "- " * WIDTH
+        print >> sys.stderr, "   " + "~ " * WIDTH
         for i in range(HEIGHT, 0, -1):
             print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i-1]) + "|"
-        print >> sys.stderr, "   " + "- " * WIDTH
+        print >> sys.stderr, "   " + "~ " * WIDTH
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
         time.sleep(0.03)
 
@@ -98,6 +99,7 @@ class Bot():
             return None, None
 
         line = raw_input()
+        line = line.upper()        
         if line == "START":
             if not self.b_started:
                 self.b_started = True
@@ -109,7 +111,11 @@ class Bot():
             return None, None
 
         try:
-            op_token, point_token, _ = line.split(" ", 2)
+            if len(line.split()) == 2:
+                op_token, point_token = line.split()                
+            else:
+                op_token, point_token, _ = line.split(" ", 2)
+
             point_w, point_h = point_token[0], point_token[1:]
             point_h = int(point_h) - 1
             point_w = atoid(point_w)
@@ -132,19 +138,6 @@ class Bot():
             test_side = self.board[h][w]
             test_side_win = MARK_WIN[test_side]
             self.board[h][w] = test_side_win
-
-        time.sleep(0.1)
-        self.show_board()
-        notes_num = len(self.notes)
-        chess_log("Notes: %d" % (notes_num))
-        num = notes_num / 2
-        if num > 6:
-            num = 6
-        for n in self.notes[:num]:
-            chess_log(n)                
-        chess_log("...")                            
-        for n in self.notes[-num:]:
-            chess_log(n)                
         
 
     def is_winner(self, test_side):
