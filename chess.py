@@ -57,10 +57,10 @@ class Bot():
        
 
     def show_board(self):
-        print >> sys.stderr, "   " + "~ " * WIDTH
+        print >> sys.stderr, "   " + "- " * WIDTH
         for i in range(HEIGHT, 0, -1):
             print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i-1]) + "|"
-        print >> sys.stderr, "   " + "~ " * WIDTH
+        print >> sys.stderr, "   " + "- " * WIDTH
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
         time.sleep(0.03)
 

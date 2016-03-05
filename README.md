@@ -35,7 +35,9 @@ chessbot作为独立运行的peer启动, 与另一个chessbot互联对弈, 不�
 
 chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. 留出strategy()在己方应该下棋时调用, strategy只需分析棋盘, 并返回落子位置.
 
-棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 棋盘会在通信时自动更新. 注意二维数组下标从0开始，高维是H轴。
+棋盘记录在二维数组中, 每个位置有3种状态: 黑/白/空, 棋盘会在通信时自动更新. 
+
+!注意: 二维数组下标从0开始，高维是H轴。
 
 可修改如下strategy函数, 实现自己的AI.
 
@@ -49,7 +51,7 @@ chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. �
                 if self.board[h][w] == chess.BLANK:
                     return h, w
 
-或者重写main函数, 仅仅使用chess.Bot代码来构建非简单回调strategy的AI, 只要依据回合制顺序通信即可.
+或者重写main函数, 仅仅使用chess.Bot代码来构建更灵活AI, 只要依据回合制顺序通信即可.
 
 
 ## 运行方式
@@ -96,7 +98,7 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
     PUT E5 *
     * Win.    
     Notes: 9    
-       ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+       - - - - - - - - - - - - - - - - -
     17|                          O O O O|
     16|                                 |
     15|                                 |
@@ -114,7 +116,7 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
      3|    *                            |
      2|  *                              |
      1|*                                |
-       ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+       - - - - - - - - - - - - - - - - -
        A B C D E F G H I J K L M N O P Q
 
 ## TODO
