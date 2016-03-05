@@ -24,7 +24,7 @@ assert (BOARD_MARKS_LENGTH > WIDTH)
 assert (BOARD_MARKS_LENGTH > HEIGHT)
 
 g_debug_info = False
- 
+
 def idtoa(point_w):
     if point_w < 0 or point_w > BOARD_MARKS_LENGTH:
         return BOARD_MARKS[0]
@@ -37,7 +37,7 @@ def atoid(mark_w):
 
 def chess_log(msg, level="INFO"):
     if level == "DEBUG" and not g_debug_info:
-        return 
+        return
     print >> sys.stderr, msg
 
 
@@ -54,7 +54,7 @@ class Bot():
         self.b_next = self.b_your_side
         self.board = [[BLANK] * WIDTH for i in range(HEIGHT)]
         self.notes = []
-       
+
 
     def show_board(self):
         print >> sys.stderr, "   " + "- " * WIDTH
@@ -62,7 +62,12 @@ class Bot():
             print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i-1]) + "|"
         print >> sys.stderr, "   " + "- " * WIDTH
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
-        time.sleep(0.03)
+
+
+    def get_board(self, pt):
+        h, w = pt
+        return self.board[h][w]
+
 
     def check_point(self, point_h, point_w):
         if point_h < 0 or point_h >= HEIGHT:
@@ -86,7 +91,7 @@ class Bot():
             self.board[point_h][point_w] = self.b_next
             operate = "%s %s%d %s" % (OP_PUT, idtoa(point_w), point_h+1, self.b_next)
             chess_operate(operate)
-            self.notes += [operate]                       
+            self.notes += [operate]
             self.b_next = self.b_your_side
             return True
 
@@ -99,7 +104,7 @@ class Bot():
             return None, None
 
         line = raw_input()
-        line = line.upper()        
+        line = line.upper()
         if line == "START":
             if not self.b_started:
                 self.b_started = True
@@ -112,7 +117,7 @@ class Bot():
 
         try:
             if len(line.split()) == 2:
-                op_token, point_token = line.split()                
+                op_token, point_token = line.split()
             else:
                 op_token, point_token, _ = line.split(" ", 2)
 
@@ -126,7 +131,7 @@ class Bot():
         if op_token == OP_PUT and self.check_point(point_h, point_w):
             self.b_started = True
             self.board[point_h][point_w] = self.b_next
-            self.notes += [line]                                   
+            self.notes += [line]
             self.b_next = self.b_my_side
             return point_h, point_w
 
@@ -138,7 +143,7 @@ class Bot():
             test_side = self.board[h][w]
             test_side_win = MARK_WIN[test_side]
             self.board[h][w] = test_side_win
-        
+
 
     def is_winner(self, test_side):
         for h in range(HEIGHT):
@@ -148,26 +153,30 @@ class Bot():
                 # test row (-)
                 self.win_points = [(h, w)]
                 for k in range(w):
-                    if self.board[h][w-k-1] != test_side:
+                    pt = (h, w-k-1)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h, w-k-1)]
+                    self.win_points += [pt]
                 for k in range(WIDTH-w-1):
-                    if self.board[h][w+k+1] != test_side:
+                    pt = (h, w+k+1)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h, w+k+1)]
+                    self.win_points += [pt]
                 if len(self.win_points) >= WIN_NUM:
                     return True
 
                 # test col (|)
                 self.win_points = [(h, w)]
                 for k in range(h):
-                    if self.board[h-k-1][w] != test_side:
+                    pt = (h-k-1, w)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h-k-1, w)]
+                    self.win_points += [pt]
                 for k in range(WIDTH-h-1):
-                    if self.board[h+k+1][w] != test_side:
+                    pt = (h+k+1, w)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h+k+1, w)]
+                    self.win_points += [pt]
                 if len(self.win_points) >= WIN_NUM:
                     return True
 
@@ -175,14 +184,16 @@ class Bot():
                 self.win_points = [(h, w)]
                 min_len = min(HEIGHT-h-1, w)
                 for k in range(min_len):
-                    if self.board[h+k+1][w-k-1] != test_side:
+                    pt = (h+k+1, w-k-1)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h+k+1, w-k-1)]
+                    self.win_points += [pt]
                 min_len = min(h, WIDTH-w-1)
                 for k in range(min_len):
-                    if self.board[h-k-1][w+k+1] != test_side:
+                    pt = (h-k-1, w+k+1)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h-k-1, w+k+1)]
+                    self.win_points += [pt]
                 if len(self.win_points) >= WIN_NUM:
                     return True
 
@@ -190,15 +201,130 @@ class Bot():
                 self.win_points = [(h, w)]
                 min_len = min(h, w)
                 for k in range(min_len):
-                    if self.board[h-k-1][w-k-1] != test_side:
+                    pt = (h-k-1, w-k-1)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h-k-1, w-k-1)]
+                    self.win_points += [pt]
                 min_len = min(HEIGHT-h-1, WIDTH-w-1)
                 for k in range(min_len):
-                    if self.board[h+k+1][w+k+1] != test_side:
+                    pt = (h+k+1, w+k+1)
+                    if self.get_board(pt) != test_side:
                         break
-                    self.win_points += [(h+k+1, w+k+1)]
+                    self.win_points += [pt]
                 if len(self.win_points) >= WIN_NUM:
                     return True
 
         return False
+
+
+    def all_blank_points_around(self, point_h, point_w):
+        h, w = point_h, point_w
+        center_side = self.board[h][w]
+        if center_side == BLANK:
+            return []
+
+        # test row (-)
+        blank_points = []
+        for k in range(min(WIN_NUM-1, w)):
+            pt = (h, w-k-1)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+        for k in range(min(WIN_NUM-1, WIDTH-w-1)):
+            pt = (h, w+k+1)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+
+        # test col (|)
+        for k in range(min(WIN_NUM-1, h)):
+            pt = (h-k-1, w)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+        for k in range(min(WIN_NUM-1, WIDTH-h-1)):
+            pt = (h+k+1, w)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+
+        # test down (\)
+        min_len = min(WIN_NUM-1, HEIGHT-h-1, w)
+        for k in range(min_len):
+            pt = (h+k+1, w-k-1)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+        min_len = min(WIN_NUM-1, h, WIDTH-w-1)
+        for k in range(min_len):
+            pt = (h-k-1, w+k+1)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+
+        # test up (/)
+        min_len = min(WIN_NUM-1, h, w)
+        for k in range(min_len):
+            pt = (h-k-1, w-k-1)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+        min_len = min(WIN_NUM-1, HEIGHT-h-1, WIDTH-w-1)
+        for k in range(min_len):
+            pt = (h+k+1, w+k+1)
+            if self.get_board(pt) == center_side:
+                pass
+            elif self.get_board(pt) == BLANK:
+                blank_points += [pt]
+            else:
+                break
+
+        return blank_points
+
+
+    def get_score_of_blanks_side(self, test_side):
+        all_my_points = []
+        for h in range(HEIGHT):
+            for w in range(WIDTH):
+                if self.board[h][w] != test_side:
+                    continue
+                all_my_points += [(h, w)]
+
+        chess_log("all_points: %s" % str(all_my_points), level="DEBUG")
+        all_my_blank_points_count = {}
+        for point_h, point_w in all_my_points:
+            blank_points_around_hw = self.all_blank_points_around(point_h, point_w)
+            for pt in blank_points_around_hw:
+                all_my_blank_points_count[pt] = all_my_blank_points_count.get(pt, 0) + 1
+
+        if not all_my_blank_points_count:
+            return []
+
+        all_my_blank_points_count_pair = all_my_blank_points_count.items()
+        all_my_blank_points_count_pair.sort(key=lambda x:x[1])
+        all_my_blank_points_count_pair.reverse()
+
+        chess_log("all_blank_points: %s" % (str(all_my_blank_points_count_pair)), level="DEBUG")
+        return all_my_blank_points_count_pair
+
