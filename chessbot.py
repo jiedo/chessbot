@@ -10,7 +10,7 @@ import chess
 def main():
     # 默认实现成回调strategy()模式,
     # 但可以实现成更复杂模式, 符合bot通信协议即可
-    sleep_time = 1
+    sleep_time = 0.1
     show_verbose = False
     chess.g_debug_info = False
     if len(sys.argv) >= 2:
@@ -92,16 +92,17 @@ def strategy40(self, defence_level, is_dup_enforce, is_space_enough):
 
     if not all_your_blank_points_count_pair:
         if not all_my_blank_points_count_pair:
-            random_point = (random.randint(0, chess.HEIGHT-1), random.randint(0, chess.WIDTH-1))
-            chess.chess_log("random_points: %s" % str(random_point), level="DEBUG")
-            return random_point
+            return (chess.HEIGHT/2, chess.WIDTH/2)
     else:
-        your_pt, your_count = all_your_blank_points_count_pair[0]
+        your_pt, your_max_count = all_your_blank_points_count_pair[0]
         if all_my_blank_points_count_pair:
-            my_pt, my_count = all_my_blank_points_count_pair[0]
-            if defence_level + your_count <= my_count:
-                return my_pt
-        return your_pt
+            my_pt, my_max_count = all_my_blank_points_count_pair[0]
+            if defence_level + your_max_count <= my_max_count:
+                candidates = [pt for pt, count in all_my_blank_points_count_pair if count == my_max_count]
+                return random.choice(candidates)
+
+        candidates = [pt for pt, count in all_your_blank_points_count_pair if count == your_max_count]
+        return random.choice(candidates)
 
 
 
@@ -134,9 +135,7 @@ def strategy5(self, defence_level, is_dup_enforce, is_space_enough):
     all_blank_points_count_pair.reverse()
 
     if not all_blank_points_count_pair:
-        random_point = (random.randint(0, chess.HEIGHT-1), random.randint(0, chess.WIDTH-1))
-        chess.chess_log("random_points: %s" % str(random_point), level="DEBUG")
-        return random_point
+        return (chess.HEIGHT/2, chess.WIDTH/2)
     else:
         pt = all_blank_points_count_pair[0][0]
         return pt
@@ -159,16 +158,17 @@ def strategy4(self, defence_level, is_dup_enforce, is_space_enough):
                                                                    test_space=is_space_enough)
     if not all_your_blank_points_count_pair:
         if not all_my_blank_points_count_pair:
-            random_point = (random.randint(0, chess.HEIGHT-1), random.randint(0, chess.WIDTH-1))
-            chess.chess_log("random_points: %s" % str(random_point), level="DEBUG")
-            return random_point
+            return (chess.HEIGHT/2, chess.WIDTH/2)
     else:
-        your_pt, your_count = all_your_blank_points_count_pair[0]
+        your_pt, your_max_count = all_your_blank_points_count_pair[0]
         if all_my_blank_points_count_pair:
-            my_pt, my_count = all_my_blank_points_count_pair[0]
-            if defence_level + your_count <= my_count:
-                return my_pt
-        return your_pt
+            my_pt, my_max_count = all_my_blank_points_count_pair[0]
+            if defence_level + your_max_count <= my_max_count:
+                candidates = [pt for pt, count in all_my_blank_points_count_pair if count == my_max_count]
+                return random.choice(candidates)
+
+        candidates = [pt for pt, count in all_your_blank_points_count_pair if count == your_max_count]
+        return random.choice(candidates)
 
 
 
