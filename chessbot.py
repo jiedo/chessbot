@@ -8,7 +8,7 @@ import chess
 
 
 def main():
-    # main 默认实现成回调strategy()模式,
+    # 默认实现成回调strategy()模式,
     # 但可以实现成更复杂模式, 符合bot通信协议即可
     sleep_time = 1
     show_verbose = False
@@ -30,11 +30,6 @@ def main():
         # 首先读取对方的落子位置, 并写入棋盘
         while bot.b_next == bot.b_your_side:
             h, w = bot.chess_get()
-
-        # if show_verbose:
-        #     time.sleep(sleep_time/10)
-        #     bot.show_board()
-        #     time.sleep(sleep_time)
 
         # 检测对方是否获胜
         if bot.is_winner(bot.b_your_side):
@@ -96,6 +91,7 @@ def strategy1(self):
 
     all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side)
     if not all_my_blank_points_count_pair:
+        # 找不到满足条件的空白，则随机放置        
         random_point = (random.randint(0, chess.HEIGHT-1), random.randint(0, chess.WIDTH-1))
         chess.chess_log("random_points: %s" % str(random_point), level="DEBUG")
         return random_point
@@ -107,6 +103,7 @@ def strategy2(self):
     # 在己方所有棋子米字形线条交汇计数最多的空白处放置
     all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side)
     if not all_my_blank_points_count_pair:
+        # 找不到满足条件的空白，则随机放置
         random_point = (random.randint(0, chess.HEIGHT-1), random.randint(0, chess.WIDTH-1))
         chess.chess_log("random_points: %s" % str(random_point), level="DEBUG")
         return random_point
@@ -125,8 +122,8 @@ def strategy3(self):
             all_my_points += [(h, w)]
 
     point_h, point_w = random.choice(all_my_points)
-    point_h += random.randint(-chess.WIN_NUM, chess.WIN_NUM)
-    point_w += random.randint(-chess.WIN_NUM, chess.WIN_NUM)
+    point_h += random.randint(-chess.WIN_NUM+1, chess.WIN_NUM-1)
+    point_w += random.randint(-chess.WIN_NUM+1, chess.WIN_NUM-1)
     return point_h, point_w
 
 
