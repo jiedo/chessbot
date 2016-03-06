@@ -369,3 +369,67 @@ class Bot():
             ", ".join(["%s:%d" % (point_to_mark(h, w), count)
                        for (h, w), count in all_my_blank_points_count_pair if count > 3])), level="DEBUG")
         return all_my_blank_points_count_pair
+
+
+
+    def is_a_good_choice(self, choice_pt, my_side, your_side, max_level=-1):
+        if max_level == 0:
+            return False
+
+        (point_h, point_w) = choice_pt
+        self.board[point_h][point_w] = my_side
+        chess_log("%s TEST GOOD CHOICE[%d]: %s" % (my_side, max_level,
+                                                  point_to_mark(point_h, point_w)), level="DEBUG")
+
+        is_dup_enforce = False
+        is_space_enough = True
+        all_my_blank_points_count_pair = self.get_score_of_blanks_side(my_side,
+                                                                       dup=is_dup_enforce,
+                                                                       test_space=is_space_enough)
+        tested_not_good_pt = []
+        for my_pt, count in all_my_blank_points_count_pair:
+            tested_not_good_pt += [my_pt]
+            if not self.is_a_bad_choice(my_pt, your_side, my_side, max_level=max_level):
+                self.board[point_h][point_w] = BLANK
+                return False
+
+        is_dup_enforce = False
+        is_space_enough = True
+        all_your_blank_points_count_pair = self.get_score_of_blanks_side(your_side,
+                                                                         dup=is_dup_enforce,
+                                                                         test_space=is_space_enough)
+        for your_pt, count in all_your_blank_points_count_pair:
+            if your_pt in tested_not_good_pt: continue
+            if not self.is_a_bad_choice(your_pt, your_side, my_side, max_level=max_level):
+                self.board[point_h][point_w] = BLANK
+                return False
+
+        self.board[point_h][point_w] = BLANK
+        return True
+
+
+    def is_a_bad_choice(self, choice_pt, my_side, your_side, max_level=-1):
+        if max_level == 0:
+            return False
+
+        (point_h, point_w) = choice_pt
+        self.board[point_h][point_w] = my_side
+        chess_log("%s TEST BAD CHOICE[%d]: %s" % (my_side, max_level,
+                                                  point_to_mark(point_h, point_w)), level="DEBUG")
+
+        is_dup_enforce = False
+        is_space_enough = True
+        all_your_blank_points_count_pair = self.get_score_of_blanks_side(your_side,
+                                                                         dup=is_dup_enforce,
+                                                                         test_space=is_space_enough)
+        for your_pt, count in all_your_blank_points_count_pair:
+            if count > 2:
+                if self.win_test(your_pt, your_side):
+                    self.board[point_h][point_w] = BLANK
+                    return True
+
+                if self.is_a_good_choice(your_pt, your_side, my_side, max_level=max_level-1):
+                    self.board[point_h][point_w] = BLANK
+                    return True
+        self.board[point_h][point_w] = BLANK
+        return False
