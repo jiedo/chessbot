@@ -165,11 +165,11 @@ def main():
         ################
 
         # 首先读取对方的落子位置, 并写入棋盘
-        while bot.b_side_this_turn == bot.b_your_side:
+        while bot.side_this_turn == bot.your_side:
             h, w = bot.get_point_of_your_chessman()
 
         # 检测对方是否获胜
-        if bot.is_winner(bot.b_your_side):
+        if bot.is_winner(bot.your_side):
             bot.light_on_win_points()
             chess.chess_log("Notes: %d" % (len(bot.notes)))
             time.sleep(0.1)
@@ -191,8 +191,8 @@ def main():
             time.sleep(sleep_time)
 
         # 检测自己是否获胜
-        if bot.is_winner(bot.b_my_side):
-            chess.chess_log("%s Win." % bot.b_my_side)
+        if bot.is_winner(bot.my_side):
+            chess.chess_log("%s Win." % bot.my_side)
             break
 
 

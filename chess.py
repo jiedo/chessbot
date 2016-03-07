@@ -52,10 +52,10 @@ def chess_operate(op):
 
 class Bot():
     def __init__(self):
-        self.b_started = False
-        self.b_my_side = WHITE
-        self.b_your_side = BLACK
-        self.b_side_this_turn = self.b_your_side
+        self.started = False
+        self.my_side = WHITE
+        self.your_side = BLACK
+        self.side_this_turn = self.your_side
         self.board = [[BLANK] * WIDTH for i in range(HEIGHT)]
         self.notes = []
 
@@ -94,33 +94,33 @@ class Bot():
 
 
     def put_my_chessman_at_point(self, point_h, point_w):
-        if self.b_side_this_turn != self.b_my_side:
+        if self.side_this_turn != self.my_side:
             chess_log("not my turn.", level="DEBUG")
             return False
 
         if self.can_put_at_point(point_h, point_w):
-            self.board[point_h][point_w] = self.b_side_this_turn
-            operate = "%s %s %s" % (OP_PUT, get_notename_of_point(point_h, point_w), self.b_side_this_turn)
+            self.board[point_h][point_w] = self.side_this_turn
+            operate = "%s %s %s" % (OP_PUT, get_notename_of_point(point_h, point_w), self.side_this_turn)
             chess_operate(operate)
             self.notes += [operate]
-            self.b_side_this_turn = self.b_your_side
+            self.side_this_turn = self.your_side
             return True
 
         return False
 
 
     def get_point_of_your_chessman(self):
-        if self.b_side_this_turn != self.b_your_side:
+        if self.side_this_turn != self.your_side:
             chess_log("not your turn.", level="DEBUG")
             return None, None
 
         line = raw_input()
         line = line.upper()
         if line == "START":
-            if not self.b_started:
-                self.b_started = True
-                self.b_my_side, self.b_your_side = self.b_your_side, self.b_my_side
-                self.b_side_this_turn = self.b_my_side
+            if not self.started:
+                self.started = True
+                self.my_side, self.your_side = self.your_side, self.my_side
+                self.side_this_turn = self.my_side
             return None, None
 
         if not line.startswith(OP_PUT):
@@ -140,10 +140,10 @@ class Bot():
             return None, None
 
         if op_token == OP_PUT and self.can_put_at_point(point_h, point_w):
-            self.b_started = True
-            self.board[point_h][point_w] = self.b_side_this_turn
+            self.started = True
+            self.board[point_h][point_w] = self.side_this_turn
             self.notes += [line]
-            self.b_side_this_turn = self.b_my_side
+            self.side_this_turn = self.my_side
             return point_h, point_w
 
         return None, None
@@ -388,6 +388,7 @@ class Bot():
 
 
     def is_a_good_choice(self, choice_pt, my_side, your_side, max_level=-1):
+        # todo: 层序遍历, 最高得分先检查
         if max_level == 0:
             return False
 
@@ -420,6 +421,7 @@ class Bot():
 
 
     def is_a_bad_choice(self, choice_pt, my_side, your_side, max_level=-1):
+        # todo: 层序遍历, 最高得分先检查
         if max_level == 0:
             return False
 
