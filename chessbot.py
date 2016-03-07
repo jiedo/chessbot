@@ -10,7 +10,7 @@ import chess
 def main():
     # 默认实现成回调strategy()模式,
     # 但可以实现成更复杂模式, 符合bot通信协议即可
-    sleep_time = 1
+    sleep_time = 0.1
     show_verbose = False
     chess.g_debug_info = False
     if len(sys.argv) >= 2:
@@ -28,8 +28,8 @@ def main():
     bot = chess.Bot()
     while True:
         # 首先读取对方的落子位置, 并写入棋盘
-        while bot.b_next == bot.b_your_side:
-            h, w = bot.chess_get()
+        while bot.b_side_this_turn == bot.b_your_side:
+            h, w = bot.get_point_of_your_chessman()
 
         # 检测对方是否获胜
         if bot.is_winner(bot.b_your_side):
@@ -42,7 +42,7 @@ def main():
         # 回调自己的策略
         h, w = strategy(bot)
         # 写入棋盘并通知对方
-        bot.chess_put(h, w)
+        bot.put_my_chessman_at_point(h, w)
         if show_verbose:
             time.sleep(sleep_time/10)
             bot.show_board()
@@ -57,17 +57,17 @@ def main():
 def strategy(self):
     # 测试AI
     if self.b_my_side == chess.BLACK:
-        # return strategy6(self, 0, True, True,
+        # return strategy6(self, 0, True,
         #                  max_level_good = 1,
         #                  max_level_bad = 2)
-        return strategy4(self, 0, True, True)
+        return strategy4(self, 0, True)
     else:
-        return strategy6(self, 0, True, True,
+        return strategy6(self, 0, True,
                          max_level_good = 1,
                          max_level_bad = 2)
 
 
-def strategy6(self, defence_level, is_dup_enforce, is_space_enough,
+def strategy6(self, defence_level, is_dup_enforce,
               max_level_good = 1,
               max_level_bad = 2):
     # 测试AI
@@ -76,23 +76,20 @@ def strategy6(self, defence_level, is_dup_enforce, is_space_enough,
     # 搜索更多步比较耗时
     #
     # is_dup_enforce: 连珠对附近空白是否有加分
-    # is_space_enough: 是否检查空白处扩展空间足够WIN_NUM
     # defence_level: 防御权重, 越大越重视防御
     #
     # 统计双方所有棋子米字形线条交汇计数最高的空白
     # max(points_score) = max(max(your's + defence),  max(mine))
     #
-    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
+    all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_my_side,
+                                                                   dup=is_dup_enforce)
     for pt, count in all_my_blank_points_count_pair:
         if count > 7:
             if self.win_test(pt, self.b_my_side):
                 return pt
 
-    all_your_blank_points_count_pair = self.get_score_of_blanks_side(self.b_your_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
+    all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_your_side,
+                                                                   dup=is_dup_enforce)
     for pt, count in all_your_blank_points_count_pair:
         if count > 7:
             if self.win_test(pt, self.b_your_side):
@@ -103,13 +100,13 @@ def strategy6(self, defence_level, is_dup_enforce, is_space_enough,
     for pt, count in all_my_blank_points_count_pair:
         tested_not_good_pt += [pt]
         if self.is_a_good_choice(pt, self.b_my_side, self.b_your_side, max_level=max_level_good):
-            chess.chess_log("%s GOOD: %s" % (self.b_my_side,  chess.point_to_mark(pt[0], pt[1])),
+            chess.chess_log("%s GOOD: %s" % (self.b_my_side,  chess.get_notename_of_point(pt[0], pt[1])),
                             level="DEBUG")
             return pt
     for pt, count in all_your_blank_points_count_pair:
         if pt in tested_not_good_pt: continue
         if self.is_a_good_choice(pt, self.b_my_side, self.b_your_side, max_level=max_level_good):
-            chess.chess_log("%s GOOD: %s" % (self.b_my_side,  chess.point_to_mark(pt[0], pt[1])),
+            chess.chess_log("%s GOOD: %s" % (self.b_my_side,  chess.get_notename_of_point(pt[0], pt[1])),
                             level="DEBUG")
             return pt
 
@@ -118,13 +115,13 @@ def strategy6(self, defence_level, is_dup_enforce, is_space_enough,
     for pt, count in all_my_blank_points_count_pair:
         if count > 2:
             if self.is_a_bad_choice(pt, self.b_my_side, self.b_your_side, max_level=max_level_bad):
-                chess.chess_log("%s BAD : %s" % (self.b_my_side,  chess.point_to_mark(pt[0], pt[1])),
+                chess.chess_log("%s BAD : %s" % (self.b_my_side,  chess.get_notename_of_point(pt[0], pt[1])),
                                 level="DEBUG")
                 tested_bad_pt += [pt]
     for pt, count in all_your_blank_points_count_pair:
         if count > 2:
             if self.is_a_bad_choice(pt, self.b_my_side, self.b_your_side, max_level=max_level_bad):
-                chess.chess_log("%s BAD : %s" % (self.b_my_side,  chess.point_to_mark(pt[0], pt[1])),
+                chess.chess_log("%s BAD : %s" % (self.b_my_side,  chess.get_notename_of_point(pt[0], pt[1])),
                                 level="DEBUG")
                 tested_bad_pt += [pt]
 
@@ -144,7 +141,7 @@ def strategy6(self, defence_level, is_dup_enforce, is_space_enough,
         _, max_count = all_blank_points_count_pair[0]
         candidates = [pt for pt, count in all_blank_points_count_pair if count == max_count]
         pt = random.choice(candidates)
-        chess.chess_log("%s No.6 give: %s" % (self.b_my_side,  chess.point_to_mark(pt[0], pt[1])),
+        chess.chess_log("%s No.6 give: %s" % (self.b_my_side,  chess.get_notename_of_point(pt[0], pt[1])),
                         level="DEBUG")
         return pt
 
@@ -163,28 +160,25 @@ def strategy6(self, defence_level, is_dup_enforce, is_space_enough,
     return (chess.HEIGHT/2, chess.WIDTH/2)
 
 
-def strategy40(self, defence_level, is_dup_enforce, is_space_enough):
+def strategy40(self, defence_level, is_dup_enforce):
     # 测试AI
     # 同4, 检测一步胜利
     #
     # is_dup_enforce: 连珠对附近空白是否有加分
-    # is_space_enough: 是否检查空白处扩展空间足够WIN_NUM
     # defence_level: 防御权重, 越大越重视防御
     #
     # 统计双方所有棋子米字形线条交汇计数最高的空白
     # max(points_score) = max(max(your's + defence),  max(mine))
     #
-    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
+    all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_my_side,
+                                                                   dup=is_dup_enforce)
     for pt, count in all_my_blank_points_count_pair:
         if count > 7:
             if self.win_test(pt, self.b_my_side):
                 return pt
 
-    all_your_blank_points_count_pair = self.get_score_of_blanks_side(self.b_your_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
+    all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_your_side,
+                                                                   dup=is_dup_enforce)
     for pt, count in all_your_blank_points_count_pair:
         if count > 7:
             if self.win_test(pt, self.b_your_side):
@@ -204,21 +198,18 @@ def strategy40(self, defence_level, is_dup_enforce, is_space_enough):
     return (chess.HEIGHT/2, chess.WIDTH/2)
 
 
-def strategy5(self, defence_level, is_dup_enforce, is_space_enough):
+def strategy5(self, defence_level, is_dup_enforce):
     # 测试AI
     # is_dup_enforce: 连珠对附近空白是否有加分
-    # is_space_enough: 是否检查空白处扩展空间足够WIN_NUM
     # defence_level: 防御权重, 越大越重视防御
     #
     # 统计双方所有棋子米字形线条交汇计数最高的空白(ME, YOU)
     # max(points_score) = max((your's + defence) JOIN (mine))
     #
-    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
-    all_your_blank_points_count_pair = self.get_score_of_blanks_side(self.b_your_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
+    all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_my_side,
+                                                                   dup=is_dup_enforce)
+    all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_your_side,
+                                                                   dup=is_dup_enforce)
 
     all_blank_points_count = {}
     for pt, count in all_your_blank_points_count_pair:
@@ -236,20 +227,17 @@ def strategy5(self, defence_level, is_dup_enforce, is_space_enough):
     return (chess.HEIGHT/2, chess.WIDTH/2)
 
 
-def strategy4(self, defence_level, is_dup_enforce, is_space_enough):
+def strategy4(self, defence_level, is_dup_enforce):
     # 测试AI
     # is_dup_enforce: 连珠对附近空白是否有加分
-    # is_space_enough: 是否检查空白处扩展空间足够WIN_NUM
     # defence_level: 防御权重, 越大越重视防御
     #
     # 统计双方所有棋子米字形线条交汇计数最高的空白
     # max(points_score) = max(max(your's + defence),  max(mine))
-    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
-    all_your_blank_points_count_pair = self.get_score_of_blanks_side(self.b_your_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
+    all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_my_side,
+                                                                   dup=is_dup_enforce)
+    all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(self.b_your_side,
+                                                                   dup=is_dup_enforce)
     if all_your_blank_points_count_pair:
         your_pt, your_max_count = all_your_blank_points_count_pair[0]
         if all_my_blank_points_count_pair:

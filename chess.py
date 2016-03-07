@@ -35,7 +35,7 @@ def atoid(mark_w):
     return BOARD_MARKS.find(str(mark_w))
 
 
-def point_to_mark(point_h, point_w):
+def get_notename_of_point(point_h, point_w):
     return "%s%d" % (idtoa(point_w), point_h+1)
 
 
@@ -55,7 +55,7 @@ class Bot():
         self.b_started = False
         self.b_my_side = WHITE
         self.b_your_side = BLACK
-        self.b_next = self.b_your_side
+        self.b_side_this_turn = self.b_your_side
         self.board = [[BLANK] * WIDTH for i in range(HEIGHT)]
         self.notes = []
 
@@ -68,12 +68,19 @@ class Bot():
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
 
 
+    def light_on_win_points(self):
+        for h, w in self.win_points:
+            test_side = self.board[h][w]
+            test_side_win = MARK_WIN[test_side]
+            self.board[h][w] = test_side_win
+
+
     def get_board(self, pt):
         h, w = pt
         return self.board[h][w]
 
 
-    def check_point(self, point_h, point_w):
+    def can_put_at_point(self, point_h, point_w):
         if point_h < 0 or point_h >= HEIGHT:
             chess_log("point_h(%d) out of range." % point_h, level="DEBUG")
             return False
@@ -81,29 +88,29 @@ class Bot():
             chess_log("point_w(%d) out of range." % point_w, level="DEBUG")
             return False
         if self.board[point_h][point_w] != BLANK:
-            chess_log("put twice. (%s)" % point_to_mark(point_h, point_w), level="DEBUG")
+            chess_log("put twice. (%s)" % get_notename_of_point(point_h, point_w), level="DEBUG")
             return False
         return True
 
 
-    def chess_put(self, point_h, point_w):
-        if self.b_next != self.b_my_side:
+    def put_my_chessman_at_point(self, point_h, point_w):
+        if self.b_side_this_turn != self.b_my_side:
             chess_log("not my turn.", level="DEBUG")
             return False
 
-        if self.check_point(point_h, point_w):
-            self.board[point_h][point_w] = self.b_next
-            operate = "%s %s %s" % (OP_PUT, point_to_mark(point_h, point_w), self.b_next)
+        if self.can_put_at_point(point_h, point_w):
+            self.board[point_h][point_w] = self.b_side_this_turn
+            operate = "%s %s %s" % (OP_PUT, get_notename_of_point(point_h, point_w), self.b_side_this_turn)
             chess_operate(operate)
             self.notes += [operate]
-            self.b_next = self.b_your_side
+            self.b_side_this_turn = self.b_your_side
             return True
 
         return False
 
 
-    def chess_get(self):
-        if self.b_next != self.b_your_side:
+    def get_point_of_your_chessman(self):
+        if self.b_side_this_turn != self.b_your_side:
             chess_log("not your turn.", level="DEBUG")
             return None, None
 
@@ -113,7 +120,7 @@ class Bot():
             if not self.b_started:
                 self.b_started = True
                 self.b_my_side, self.b_your_side = self.b_your_side, self.b_my_side
-                self.b_next = self.b_my_side
+                self.b_side_this_turn = self.b_my_side
             return None, None
 
         if not line.startswith(OP_PUT):
@@ -132,17 +139,32 @@ class Bot():
             chess_log("error(%s): %s" % (line, e), level="DEBUG")
             return None, None
 
-        if op_token == OP_PUT and self.check_point(point_h, point_w):
+        if op_token == OP_PUT and self.can_put_at_point(point_h, point_w):
             self.b_started = True
-            self.board[point_h][point_w] = self.b_next
+            self.board[point_h][point_w] = self.b_side_this_turn
             self.notes += [line]
-            self.b_next = self.b_my_side
+            self.b_side_this_turn = self.b_my_side
             return point_h, point_w
 
         return None, None
 
 
-    def test_point_around(self, point_h, point_w):
+    def detect_positions_around_point(self, point_h, point_w):
+        # 包括回调函数:
+        #
+        # self.callback_begin
+        # self.callback_count
+        # self.callback_end
+        #
+        # 在遍历中心点的4个主要方向时回调.
+        # 开始遍历此方向时调用一次: callback_begin,
+        # 遍历此方向上每一个位置调用: callback_count
+        # 此方向遍历完毕调用: callback_end
+        # 如果callback_end返回True, 则函数提前返回True
+        #
+        # 遍历完8个方向后, 返回False
+        #
+
         h, w = point_h, point_w
         self.center_point = (point_h, point_w)
         self.center_side = self.board[h][w]
@@ -202,13 +224,6 @@ class Bot():
         return False
 
 
-    def light_on_win_points(self):
-        for h, w in self.win_points:
-            test_side = self.board[h][w]
-            test_side_win = MARK_WIN[test_side]
-            self.board[h][w] = test_side_win
-
-
     def callback_begin_winner(self, where):
         self.win_points = [self.center_point]
     def callback_count_winner(self, pt, where, part):
@@ -229,8 +244,7 @@ class Bot():
             for w in range(WIDTH):
                 if self.board[h][w] != test_side:
                     continue
-
-                if self.test_point_around(h, w):
+                if self.detect_positions_around_point(h, w):
                     return True
         return False
 
@@ -240,15 +254,13 @@ class Bot():
         self.callback_end = self.callback_end_winner
         self.callback_begin = self.callback_begin_winner
 
-        backup_side = self.get_board(pt)
-
         (point_h, point_w) = pt
         self.board[point_h][point_w] = test_side
-        if self.test_point_around(point_h, point_w):
-            self.board[point_h][point_w] = backup_side
+        if self.detect_positions_around_point(point_h, point_w):
+            self.board[point_h][point_w] = BLANK
             return True
 
-        self.board[point_h][point_w] = backup_side
+        self.board[point_h][point_w] = BLANK
         return False
 
 
@@ -296,7 +308,7 @@ class Bot():
             if is_part_link < 0:
                 counter = 1
             self.direction_chain_count[part] = -1
-            self.blank_points += [(pt, counter)]
+            self.blank_points_with_count_pair += [(pt, counter)]
         else:
             return True
         return False
@@ -304,41 +316,42 @@ class Bot():
         return False
 
 
-    def all_blank_points_around(self, point_h, point_w, test_space=False):
+    def get_all_blank_points_around_point(self, point_h, point_w):
+        # 棋子周围能"有效影响"的空白的位置坐标
+        # 其中:
+        # 1. 空余连线必须不小于WIN_NUM
+        # 2. 紧密相连的多个棋子对同一条线上的范围内的空白加分
+
         h, w = point_h, point_w
         center_side = self.board[h][w]
         if center_side == BLANK:
             return []
 
         self.direction_space_count = {}
-        if test_space:
-            self.callback_count = self.callback_count_space
-            self.callback_end = self.callback_end_space
-            self.callback_begin = self.callback_begin_space
-            self.test_point_around(point_h, point_w)
-        else:
-            self.direction_space_count = {
-                "row": 5,
-                "col": 5,
-                "up": 5,
-                "down": 5,
-            }
+        self.callback_count = self.callback_count_space
+        self.callback_end = self.callback_end_space
+        self.callback_begin = self.callback_begin_space
+        self.detect_positions_around_point(point_h, point_w)
 
         self.direction_chain_count = {}
         self.callback_count = self.callback_count_chain
         self.callback_end = self.callback_end_chain
         self.callback_begin = self.callback_begin_chain
-        self.test_point_around(point_h, point_w)
+        self.detect_positions_around_point(point_h, point_w)
 
-        self.blank_points = []
+        self.blank_points_with_count_pair = []
         self.callback_count = self.callback_count_blank_points
         self.callback_end = self.callback_end_blank_points
         self.callback_begin = self.callback_begin_blank_points
-        self.test_point_around(point_h, point_w)
-        return self.blank_points
+        self.detect_positions_around_point(point_h, point_w)
+        return self.blank_points_with_count_pair
 
 
-    def get_score_of_blanks_side(self, test_side, test_space=False, dup=False):
+    def get_score_of_blanks_for_side(self, test_side, dup=False):
+        # 找出所有在棋盘中test_side棋子的位置坐标, 并找出每一个棋子周围能影响到的空白的位置坐标
+        # 返回所有的空白位置坐标和对应的重复次数 pair
+
+        # 获取所有在棋盘中test_side棋子的位置坐标
         all_my_points = []
         for h in range(HEIGHT):
             for w in range(WIDTH):
@@ -347,11 +360,12 @@ class Bot():
                 all_my_points += [(h, w)]
 
         chess_log("%s Points: %s" % (test_side,
-                                         ", ".join([point_to_mark(h, w)
-                                                    for h, w in all_my_points])), level="DEBUG")
+                                     ", ".join([get_notename_of_point(h, w)
+                                                for h, w in all_my_points])), level="DEBUG")
         all_my_blank_points_count = {}
         for point_h, point_w in all_my_points:
-            blank_points_around_hw = self.all_blank_points_around(point_h, point_w, test_space)
+            # 获取每一个棋子周围能影响到的空白的位置坐标
+            blank_points_around_hw = self.get_all_blank_points_around_point(point_h, point_w)
             for pt, counter in blank_points_around_hw:
                 if not dup:
                     counter = 1
@@ -360,13 +374,14 @@ class Bot():
         if not all_my_blank_points_count:
             return []
 
+        # 返回所有的空白位置坐标和对应的重复次数 pair
         all_my_blank_points_count_pair = all_my_blank_points_count.items()
         all_my_blank_points_count_pair.sort(key=lambda x:x[1])
         all_my_blank_points_count_pair.reverse()
 
         chess_log("%s Score: %s" % (
             test_side,
-            ", ".join(["%s:%d" % (point_to_mark(h, w), count)
+            ", ".join(["%s:%d" % (get_notename_of_point(h, w), count)
                        for (h, w), count in all_my_blank_points_count_pair if count > 3])), level="DEBUG")
         return all_my_blank_points_count_pair
 
@@ -379,13 +394,11 @@ class Bot():
         (point_h, point_w) = choice_pt
         self.board[point_h][point_w] = my_side
         chess_log("%s TEST GOOD CHOICE[%d]: %s" % (my_side, max_level,
-                                                  point_to_mark(point_h, point_w)), level="DEBUG")
+                                                  get_notename_of_point(point_h, point_w)), level="DEBUG")
 
         is_dup_enforce = False
-        is_space_enough = True
-        all_my_blank_points_count_pair = self.get_score_of_blanks_side(my_side,
-                                                                       dup=is_dup_enforce,
-                                                                       test_space=is_space_enough)
+        all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(my_side,
+                                                                       dup=is_dup_enforce)
         tested_not_good_pt = []
         for my_pt, count in all_my_blank_points_count_pair:
             tested_not_good_pt += [my_pt]
@@ -394,10 +407,8 @@ class Bot():
                 return False
 
         is_dup_enforce = False
-        is_space_enough = True
-        all_your_blank_points_count_pair = self.get_score_of_blanks_side(your_side,
-                                                                         dup=is_dup_enforce,
-                                                                         test_space=is_space_enough)
+        all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(your_side,
+                                                                         dup=is_dup_enforce)
         for your_pt, count in all_your_blank_points_count_pair:
             if your_pt in tested_not_good_pt: continue
             if not self.is_a_bad_choice(your_pt, your_side, my_side, max_level=max_level):
@@ -415,21 +426,23 @@ class Bot():
         (point_h, point_w) = choice_pt
         self.board[point_h][point_w] = my_side
         chess_log("%s TEST BAD CHOICE[%d]: %s" % (my_side, max_level,
-                                                  point_to_mark(point_h, point_w)), level="DEBUG")
+                                                  get_notename_of_point(point_h, point_w)), level="DEBUG")
 
         is_dup_enforce = False
-        is_space_enough = True
-        all_your_blank_points_count_pair = self.get_score_of_blanks_side(your_side,
-                                                                         dup=is_dup_enforce,
-                                                                         test_space=is_space_enough)
+        all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(your_side,
+                                                                             dup=is_dup_enforce)
         for your_pt, count in all_your_blank_points_count_pair:
-            if count > 1:
+            # 先扫一遍有没有直接胜利的, count<4的点不可能胜利
+            if count >= 4:
                 if self.win_test(your_pt, your_side):
                     self.board[point_h][point_w] = BLANK
                     return True
-
+        for your_pt, count in all_your_blank_points_count_pair:
+            if count > 1:
+                # tofix: 不应该忽视count==1的点, 但为了减少计算
                 if self.is_a_good_choice(your_pt, your_side, my_side, max_level=max_level-1):
                     self.board[point_h][point_w] = BLANK
                     return True
+
         self.board[point_h][point_w] = BLANK
         return False

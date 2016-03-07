@@ -165,8 +165,8 @@ def main():
         ################
 
         # 首先读取对方的落子位置, 并写入棋盘
-        while bot.b_next == bot.b_your_side:
-            h, w = bot.chess_get()
+        while bot.b_side_this_turn == bot.b_your_side:
+            h, w = bot.get_point_of_your_chessman()
 
         # 检测对方是否获胜
         if bot.is_winner(bot.b_your_side):
@@ -184,7 +184,7 @@ def main():
         h, w = chess.HEIGHT-ch-1, cw
 
         # 写入棋盘并通知对方
-        bot.chess_put(h, w)
+        bot.put_my_chessman_at_point(h, w)
         if show_verbose:
             time.sleep(sleep_time/10)
             bot.show_board()
