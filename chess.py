@@ -423,7 +423,7 @@ class Bot():
                                                                          dup=is_dup_enforce,
                                                                          test_space=is_space_enough)
         for your_pt, count in all_your_blank_points_count_pair:
-            if count > 2:
+            if count > 1:
                 if self.win_test(your_pt, your_side):
                     self.board[point_h][point_w] = BLANK
                     return True

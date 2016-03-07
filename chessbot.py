@@ -10,7 +10,7 @@ import chess
 def main():
     # 默认实现成回调strategy()模式,
     # 但可以实现成更复杂模式, 符合bot通信协议即可
-    sleep_time = 0.01
+    sleep_time = 1
     show_verbose = False
     chess.g_debug_info = False
     if len(sys.argv) >= 2:
@@ -57,9 +57,10 @@ def main():
 def strategy(self):
     # 测试AI
     if self.b_my_side == chess.BLACK:
-        return strategy6(self, 0, True, True,
-                         max_level_good = 1,
-                         max_level_bad = 2)
+        # return strategy6(self, 0, True, True,
+        #                  max_level_good = 1,
+        #                  max_level_bad = 2)
+        return strategy4(self, 0, True, True)
     else:
         return strategy6(self, 0, True, True,
                          max_level_good = 1,

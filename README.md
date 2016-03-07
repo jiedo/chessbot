@@ -87,6 +87,11 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
 
     $ python -u ./chessbot.py -d
 
+安装pygame后, chessui.py支持人机接入, 参数配置和chessbot.py相同. 提供了一个图形棋盘界面, 可人机/人人对弈.
+
+    python2.7 -u ./chessui.py -v < fifo | python2.7 -u ./chessbot.py -w > fifo
+
+
 
 ## 结果展示
 
@@ -150,6 +155,6 @@ chessbot.py暂时实现为通过stdin/stdout通信. chessbot.py读取stdin, 得�
 ## TODO
 
 * 记录双方计算过程时间
-* 实现对弈策略
-* 很容易实现一个chessbot前端, 实现人机对弈.
 * 增加其他棋类规则
+* ~~实现对弈策略~~
+* ~~很容易实现一个chessbot前端, 实现人机对弈.~~

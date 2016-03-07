@@ -3,13 +3,12 @@
 
 import sys
 import time
-import random
 import chess
 import math, pygame
 from pygame.locals import *
 
 
-CHESSMAN_SIZE = 30
+CHESSMAN_SIZE = 50
 
 BOARD_LEFT = 2 * CHESSMAN_SIZE
 BOARD_TOP = 2 * CHESSMAN_SIZE
@@ -54,9 +53,7 @@ def get_click_point(pos_click):
     return (int_cw, int_ch)
 
 
-def draw_board(surface, chess_board, color):
-    "used to draw (and clear) the stars"
-
+def draw_board(surface, chess_board):
     line_color = 40, 80, 40
     background_color = 100, 100, 100
     black_color = 10, 10, 10
@@ -125,7 +122,6 @@ def draw_board(surface, chess_board, color):
 def main():
     # 默认实现成回调strategy()模式,
     # 但可以实现成更复杂模式, 符合bot通信协议即可
-
     global g_point_to_put, g_show_point_to_put
 
     sleep_time = 0.01
@@ -143,21 +139,17 @@ def main():
             chess.g_debug_info = True
 
     ################
-    #create our starfield
-    random.seed()
     clock = pygame.time.Clock()
-    #initialize and prepare screen
     pygame.init()
     screen = pygame.display.set_mode(WINSIZE)
     pygame.display.set_caption('Gobang')
-    white = 255, 240, 200
     done = False
     ################
 
     bot = chess.Bot()
     while True:
         ################
-        draw_board(screen, bot.board, white)
+        draw_board(screen, bot.board)
         pygame.display.update()
         for e in pygame.event.get():
             if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
@@ -184,15 +176,13 @@ def main():
             bot.show_board()
             break
 
-        # 回调自己的策略
+        # 读取ui点击
         cw, ch = get_click_point(g_point_to_put)
         if cw is None or ch is None:
             continue
-
         g_point_to_put = [0, 0]
-        h = chess.HEIGHT - ch - 1
-        w = cw
-        #h, w = strategy(bot)
+        h, w = chess.HEIGHT-ch-1, cw
+
         # 写入棋盘并通知对方
         bot.chess_put(h, w)
         if show_verbose:
@@ -206,42 +196,5 @@ def main():
             break
 
 
-def strategy(self):
-    # 测试AI
-    if self.b_my_side == chess.BLACK:
-        return strategy4(self, 0, True, True)
-    else:
-        return strategy4(self, 0, True, True)
-
-
-def strategy4(self, defence_level, is_dup_enforce, is_space_enough):
-    # 测试AI
-    # is_dup_enforce: 连珠对附近空白是否有加分
-    # is_space_enough: 是否检查空白处扩展空间足够WIN_NUM
-    # defence_level: 防御权重, 越大越重视防御
-    #
-    # 统计双方所有棋子米字形线条交汇计数最高的空白
-    # max(points_score) = max(max(your's + defence),  max(mine))
-    all_my_blank_points_count_pair = self.get_score_of_blanks_side(self.b_my_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
-    all_your_blank_points_count_pair = self.get_score_of_blanks_side(self.b_your_side,
-                                                                   dup=is_dup_enforce,
-                                                                   test_space=is_space_enough)
-    if all_your_blank_points_count_pair:
-        your_pt, your_max_count = all_your_blank_points_count_pair[0]
-        if all_my_blank_points_count_pair:
-            my_pt, my_max_count = all_my_blank_points_count_pair[0]
-            if defence_level + your_max_count <= my_max_count:
-                candidates = [pt for pt, count in all_my_blank_points_count_pair if count == my_max_count]
-                return random.choice(candidates)
-
-        candidates = [pt for pt, count in all_your_blank_points_count_pair if count == your_max_count]
-        return random.choice(candidates)
-
-    return (chess.HEIGHT/2, chess.WIDTH/2)
-
-
-# if python says run, then we should run
 if __name__ == '__main__':
     main()
