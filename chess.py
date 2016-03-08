@@ -57,15 +57,60 @@ class Bot():
         self.your_side = BLACK
         self.side_this_turn = self.your_side
         self.board = [[BLANK] * WIDTH for i in range(HEIGHT)]
+        self.board_separate_line = "- " * WIDTH
         self.notes = []
 
 
-    def show_board(self):
-        print >> sys.stderr, "   " + "- " * WIDTH
+    def board_dumps(self):
+        print >> sys.stderr, "   " + self.board_separate_line
+
         for i in range(HEIGHT, 0, -1):
             print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i-1]) + "|"
-        print >> sys.stderr, "   " + "- " * WIDTH
+
+        print >> sys.stderr, "   " + self.board_separate_line
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
+
+
+    def board_loads(self, board_block):
+        self.my_side = WHITE
+        self.your_side = BLACK
+        self.side_this_turn = self.your_side
+
+        board_block_lines = board_block.split("\n")
+        if len(board_block_lines) < HEIGHT + 5:
+            chess_log("error in board_loads: not enough lines.")
+            return False
+        board_block_lines.reverse()
+
+        count_balance = 0
+        for height, line_side_notes in enumerate(board_block_lines[3:-2]):
+            height_label, side_notes, _ = line_side_notes.split("|")
+            for i in range(WIDTH):
+                note = side_notes[i*2]
+                if note in [BLACK, WHITE, BLANK]:
+                    self.board[height][i] = note
+                else:
+                    chess_log("error in board_loads: note '%s' is illegal." % note)
+                    return False
+
+                if note == BLACK:
+                    count_balance += 1
+                    self.swap_turn_side()
+                elif note == WHITE:
+                    count_balance -= 1
+                    self.swap_turn_side()
+
+        if count_balance > 1 or count_balance < 0:
+            chess_log("error in board_loads: notes[%d] is not balance." % count_balance)
+            return False
+
+        if self.side_this_turn == self.your_side:
+            assert(count_balance == 0)
+            self.swap_user_side()
+        else:
+            assert(count_balance == 1)
+
+        return True
 
 
     def light_on_win_points(self):
@@ -73,11 +118,6 @@ class Bot():
             test_side = self.board[h][w]
             test_side_win = MARK_WIN[test_side]
             self.board[h][w] = test_side_win
-
-
-    def get_board(self, pt):
-        h, w = pt
-        return self.board[h][w]
 
 
     def can_put_at_point(self, point_h, point_w):
@@ -93,9 +133,20 @@ class Bot():
         return True
 
 
-    def put_my_chessman_at_point(self, point_h, point_w):
-        if self.side_this_turn != self.my_side:
-            chess_log("not my turn.", level="DEBUG")
+    def swap_user_side(self):
+        self.my_side, self.your_side = self.your_side, self.my_side
+
+
+    def swap_turn_side(self):
+        if self.side_this_turn == self.my_side:
+            self.side_this_turn = self.your_side
+        else:
+            self.side_this_turn = self.my_side
+
+
+    def put_chessman_at_point(self, put_side, point_h, point_w):
+        if self.side_this_turn != put_side:
+            chess_log("not %s turn." % put_side, level="DEBUG")
             return False
 
         if self.can_put_at_point(point_h, point_w):
@@ -103,15 +154,15 @@ class Bot():
             operate = "%s %s %s" % (OP_PUT, get_notename_of_point(point_h, point_w), self.side_this_turn)
             chess_operate(operate)
             self.notes += [operate]
-            self.side_this_turn = self.your_side
+            self.swap_turn_side()
             return True
 
         return False
 
 
-    def get_point_of_your_chessman(self):
-        if self.side_this_turn != self.your_side:
-            chess_log("not your turn.", level="DEBUG")
+    def get_point_of_chessman(self, get_side):
+        if self.side_this_turn != get_side:
+            chess_log("not %s turn." % get_side, level="DEBUG")
             return None, None
 
         line = raw_input()
@@ -119,7 +170,7 @@ class Bot():
         if line == "START":
             if not self.started:
                 self.started = True
-                self.my_side, self.your_side = self.your_side, self.my_side
+                self.swap_user_side()
                 self.side_this_turn = self.my_side
             return None, None
 
@@ -143,7 +194,7 @@ class Bot():
             self.started = True
             self.board[point_h][point_w] = self.side_this_turn
             self.notes += [line]
-            self.side_this_turn = self.my_side
+            self.swap_turn_side()
             return point_h, point_w
 
         return None, None
@@ -227,7 +278,7 @@ class Bot():
     def callback_begin_winner(self, where):
         self.win_points = [self.center_point]
     def callback_count_winner(self, pt, where, part):
-        if self.get_board(pt) != self.center_side:
+        if self.board[pt[0]][pt[1]] != self.center_side:
             return True
         self.win_points += [pt]
         return False
@@ -269,7 +320,7 @@ class Bot():
         # 单排连珠计数
         return
     def callback_count_chain(self, pt, where, part):
-        if self.get_board(pt) != self.center_side:
+        if self.board[pt[0]][pt[1]] != self.center_side:
             return True
         self.direction_chain_count[where] = self.direction_chain_count.get(where, 0) + 1
         self.direction_chain_count[part] = self.direction_chain_count.get(part, 0) + 1
@@ -283,7 +334,7 @@ class Bot():
         # 单排有效空间计数
         return
     def callback_count_space(self, pt, where, part):
-        if self.get_board(pt) not in [self.center_side, BLANK]:
+        if self.board[pt[0]][pt[1]] not in [self.center_side, BLANK]:
             return True
         self.direction_space_count[where] = self.direction_space_count.get(where, 0) + 1
         self.direction_space_count[part] = self.direction_space_count.get(part, 0) + 1
@@ -300,9 +351,9 @@ class Bot():
             # 单排空间不足不计数
             return True
 
-        if self.get_board(pt) == self.center_side:
+        if self.board[pt[0]][pt[1]] == self.center_side:
             pass
-        elif self.get_board(pt) == BLANK:
+        elif self.board[pt[0]][pt[1]] == BLANK:
             counter = self.direction_chain_count[where]
             is_part_link = self.direction_chain_count.get(part, 0)
             if is_part_link < 0:
@@ -347,7 +398,7 @@ class Bot():
         return self.blank_points_with_count_pair
 
 
-    def get_score_of_blanks_for_side(self, test_side, dup=False):
+    def get_score_of_blanks_for_side(self, test_side, is_dup_enforce=False):
         # 找出所有在棋盘中test_side棋子的位置坐标, 并找出每一个棋子周围能影响到的空白的位置坐标
         # 返回所有的空白位置坐标和对应的重复次数 pair
 
@@ -367,7 +418,7 @@ class Bot():
             # 获取每一个棋子周围能影响到的空白的位置坐标
             blank_points_around_hw = self.get_all_blank_points_around_point(point_h, point_w)
             for pt, counter in blank_points_around_hw:
-                if not dup:
+                if not is_dup_enforce:
                     counter = 1
                 all_my_blank_points_count[pt] = all_my_blank_points_count.get(pt, 0) + counter
 
@@ -386,6 +437,33 @@ class Bot():
         return all_my_blank_points_count_pair
 
 
+    def get_score_of_blanks_for_both_sides(self,
+                                           defence_level=0,
+                                           is_dup_enforce=False):
+        # is_dup_enforce: 连珠对附近空白是否有加分
+        # defence_level: 防御权重, 越大越重视防御
+        #
+        # 统计双方所有棋子米字形线条交汇计数最高的空白(ME, YOU)
+        # max(points_score) = max((your's + defence) JOIN (mine))
+        #
+        all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(self.my_side,
+                                                                       is_dup_enforce=is_dup_enforce)
+        all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(self.your_side,
+                                                                       is_dup_enforce=is_dup_enforce)
+        all_blank_points_count = {}
+        for pt, count in all_your_blank_points_count_pair:
+            all_blank_points_count[pt] = count + defence_level
+
+        for pt, count in all_my_blank_points_count_pair:
+            all_blank_points_count[pt] = all_blank_points_count.get(pt, 0) + count
+
+        all_blank_points_count_pair = all_blank_points_count.items()
+        all_blank_points_count_pair.sort(key=lambda x:x[1])
+        all_blank_points_count_pair.reverse()
+
+        return all_blank_points_count_pair
+
+
 
     def is_a_good_choice(self, choice_pt, my_side, your_side, max_level=-1):
         # todo: 层序遍历, 最高得分先检查
@@ -399,7 +477,18 @@ class Bot():
 
         is_dup_enforce = False
         all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(my_side,
-                                                                       dup=is_dup_enforce)
+                                                                           is_dup_enforce=is_dup_enforce)
+
+        count_win_point = 0
+        for my_pt, count in all_my_blank_points_count_pair:
+            # 先扫一遍有没有多处直接胜利的, count<4的点不可能胜利
+            if count < 4: continue
+            if self.win_test(my_pt, my_side):
+                count_win_point += 1
+                if count_win_point > 1:
+                    self.board[point_h][point_w] = BLANK
+                    return True
+
         tested_not_good_pt = []
         for my_pt, count in all_my_blank_points_count_pair:
             tested_not_good_pt += [my_pt]
@@ -409,7 +498,7 @@ class Bot():
 
         is_dup_enforce = False
         all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(your_side,
-                                                                         dup=is_dup_enforce)
+                                                                         is_dup_enforce=is_dup_enforce)
         for your_pt, count in all_your_blank_points_count_pair:
             if your_pt in tested_not_good_pt: continue
             if not self.is_a_bad_choice(your_pt, your_side, my_side, max_level=max_level):
@@ -432,7 +521,7 @@ class Bot():
 
         is_dup_enforce = False
         all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(your_side,
-                                                                             dup=is_dup_enforce)
+                                                                             is_dup_enforce=is_dup_enforce)
         for your_pt, count in all_your_blank_points_count_pair:
             # 先扫一遍有没有直接胜利的, count<4的点不可能胜利
             if count >= 4:

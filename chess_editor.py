@@ -111,6 +111,9 @@ def draw_board(surface, chess_board):
                 color = black_color
             elif test_side == chess.WHITE:
                 color = white_color
+            else:
+                chess.chess_log("note: '%s' is illegal." % (test_side))
+
             radius = int(CHESSMAN_SIZE * 0.309)
             width = radius
             pygame.draw.circle(surface, color, pos, radius, width)
@@ -144,6 +147,31 @@ def main():
     ################
 
     bot = chess.Bot()
+
+
+    board_block = """
+   - - - - - - - - - - - - - - -
+15|O                           *|
+14|                             |
+13|                             |
+12|                             |
+11|                             |
+10|                             |
+ 9|            * O *            |
+ 8|            O O O O         O|
+ 7|            * * *           *|
+ 6|                             |
+ 5|                             |
+ 4|                             |
+ 3|                             |
+ 2|                             |
+ 1|*                           O|
+   - - - - - - - - - - - - - - -
+   A B C D E F G H I J K L M N O
+    """
+
+    bot.board_loads(board_block)
+    bot.board_dumps()
     while True:
         ################
         draw_board(screen, bot.board)
@@ -162,16 +190,25 @@ def main():
         ################
 
         # 首先读取对方的落子位置, 并写入棋盘
-        while bot.side_this_turn == bot.your_side:
-            h, w = bot.get_point_of_chessman(bot.your_side)
+        if bot.side_this_turn == bot.your_side:
+            #h, w = bot.get_point_of_chessman(bot.your_side)
+            # 读取ui点击
+            cw, ch = get_click_point(g_point_to_put)
+            if cw is None or ch is None:
+                continue
+            g_point_to_put = [0, 0]
+            h, w = chess.HEIGHT-ch-1, cw
 
-        # 检测对方是否获胜
-        if bot.is_winner(bot.your_side):
-            bot.light_on_win_points()
-            chess.chess_log("Notes: %d" % (len(bot.notes)))
-            time.sleep(0.1)
-            bot.board_dumps()
-            break
+            bot.put_chessman_at_point(bot.your_side, h, w)
+
+            # 检测对方是否获胜
+            if bot.is_winner(bot.your_side):
+                bot.light_on_win_points()
+                chess.chess_log("Notes: %d" % (len(bot.notes)))
+                time.sleep(0.1)
+                bot.board_dumps()
+                break
+
 
         # 读取ui点击
         cw, ch = get_click_point(g_point_to_put)
