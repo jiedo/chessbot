@@ -101,15 +101,15 @@ def draw_board(surface, chess_board):
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
             test_side = chess_board[chess.HEIGHT-h-1][w]
-            if test_side == chess.BLANK:
+            if test_side == chess.BLANK_ID:
                 continue
 
             pos = (BOARD_LEFT + w * CHESSMAN_SIZE,
                    BOARD_TOP + h * CHESSMAN_SIZE,)
 
-            if test_side == chess.BLACK:
+            if test_side == chess.BLACK_ID:
                 color = black_color
-            elif test_side == chess.WHITE:
+            elif test_side == chess.WHITE_ID:
                 color = white_color
             else:
                 chess.chess_log("note: '%s' is illegal." % (test_side))

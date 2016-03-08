@@ -11,14 +11,46 @@ WIN_NUM = 5
 BLANK = " "
 WHITE = "O"
 BLACK = "*"
-MARK_WIN = {
-    WHITE: "\033[32mO\033[0m",
-    BLACK: "\033[32m*\033[0m",
-}
+WHITE_WIN = "\033[32mO\033[0m"
+BLACK_WIN = "\033[32m*\033[0m"
+
 
 OP_PUT = "PUT"
 BOARD_MARKS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 BOARD_MARKS_LENGTH = len(BOARD_MARKS)
+BLANK_ID = 0
+WHITE_ID = -1
+BLACK_ID = 1
+WHITE_WIN_ID = 3
+BLACK_WIN_ID = 2
+
+MARK_WIN = {
+    WHITE_ID: WHITE_WIN_ID,
+    BLACK_ID: BLACK_WIN_ID,
+}
+
+NOTE_TO_ID = {
+    BLANK: BLANK_ID,
+    WHITE: WHITE_ID,
+    BLACK: BLACK_ID,
+}
+ID_TO_NOTE = [BLANK, BLACK, BLACK_WIN, WHITE_WIN, WHITE]
+
+DIRECTION_ROW = 0
+DIRECTION_WEST = 1
+DIRECTION_EAST = 2
+
+DIRECTION_COL = 3
+DIRECTION_SOUTH = 4
+DIRECTION_NORTH = 5
+
+DIRECTION_DOWN = 6
+DIRECTION_NORTHWEST = 7
+DIRECTION_SOUTHEAST = 8
+
+DIRECTION_UP = 9
+DIRECTION_SOUTHWEST = 10
+DIRECTION_NORTHEAST = 11
 
 assert (BOARD_MARKS_LENGTH > WIDTH)
 assert (BOARD_MARKS_LENGTH > HEIGHT)
@@ -53,10 +85,10 @@ def chess_operate(op):
 class Bot():
     def __init__(self):
         self.started = False
-        self.my_side = WHITE
-        self.your_side = BLACK
+        self.my_side = WHITE_ID
+        self.your_side = BLACK_ID
         self.side_this_turn = self.your_side
-        self.board = [[BLANK] * WIDTH for i in range(HEIGHT)]
+        self.board = [[BLANK_ID] * WIDTH for i in range(HEIGHT)]
         self.board_separate_line = "- " * WIDTH
         self.notes = []
 
@@ -65,15 +97,16 @@ class Bot():
         print >> sys.stderr, "   " + self.board_separate_line
 
         for i in range(HEIGHT, 0, -1):
-            print >> sys.stderr, ("%2d|" % i) + " ".join(self.board[i-1]) + "|"
+            print >> sys.stderr, ("%2d|" % i) + " ".join([ID_TO_NOTE[note_id]
+                                                          for note_id in self.board[i-1]]) + "|"
 
         print >> sys.stderr, "   " + self.board_separate_line
         print >> sys.stderr, "   " + " ".join([idtoa(i) for i in range(WIDTH)])
 
 
     def board_loads(self, board_block):
-        self.my_side = WHITE
-        self.your_side = BLACK
+        self.my_side = WHITE_ID
+        self.your_side = BLACK_ID
         self.side_this_turn = self.your_side
 
         board_block_lines = board_block.split("\n")
@@ -88,7 +121,7 @@ class Bot():
             for i in range(WIDTH):
                 note = side_notes[i*2]
                 if note in [BLACK, WHITE, BLANK]:
-                    self.board[height][i] = note
+                    self.board[height][i] = NOTE_TO_ID[note]
                 else:
                     chess_log("error in board_loads: note '%s' is illegal." % note)
                     return False
@@ -127,7 +160,7 @@ class Bot():
         if point_w < 0 or point_w >= WIDTH:
             chess_log("point_w(%d) out of range." % point_w, level="DEBUG")
             return False
-        if self.board[point_h][point_w] != BLANK:
+        if self.board[point_h][point_w] != BLANK_ID:
             chess_log("put twice. (%s)" % get_notename_of_point(point_h, point_w), level="DEBUG")
             return False
         return True
@@ -215,61 +248,60 @@ class Bot():
         #
         # 遍历完8个方向后, 返回False
         #
-
         h, w = point_h, point_w
         self.center_point = (point_h, point_w)
         self.center_side = self.board[h][w]
 
         # test row (-)
-        self.callback_begin("row")
+        self.callback_begin(DIRECTION_ROW)
         for k in range(min(WIN_NUM-1, w)):
             pt = (h, w-k-1)
-            if self.callback_count(pt, "row", "west"):
+            if self.callback_count(pt, DIRECTION_ROW, DIRECTION_WEST):
                 break
         for k in range(min(WIN_NUM-1, WIDTH-w-1)):
             pt = (h, w+k+1)
-            if self.callback_count(pt, "row", "east"):
+            if self.callback_count(pt, DIRECTION_ROW, DIRECTION_EAST):
                 break
-        if self.callback_end("row"):
+        if self.callback_end(DIRECTION_ROW):
             return True
 
         # test col (|)
-        self.callback_begin("col")
+        self.callback_begin(DIRECTION_COL)
         for k in range(min(WIN_NUM-1, h)):
             pt = (h-k-1, w)
-            if self.callback_count(pt, "col", "south"):
+            if self.callback_count(pt, DIRECTION_COL, DIRECTION_SOUTH):
                 break
         for k in range(min(WIN_NUM-1, WIDTH-h-1)):
             pt = (h+k+1, w)
-            if self.callback_count(pt, "col", "north"):
+            if self.callback_count(pt, DIRECTION_COL, DIRECTION_NORTH):
                 break
-        if self.callback_end("col"):
+        if self.callback_end(DIRECTION_COL):
             return True
 
         # test down (\)
-        self.callback_begin("down")
+        self.callback_begin(DIRECTION_DOWN)
         for k in range(min(WIN_NUM-1, HEIGHT-h-1, w)):
             pt = (h+k+1, w-k-1)
-            if self.callback_count(pt, "down", "northwest"):
+            if self.callback_count(pt, DIRECTION_DOWN, DIRECTION_NORTHWEST):
                 break
         for k in range(min(WIN_NUM-1, h, WIDTH-w-1)):
             pt = (h-k-1, w+k+1)
-            if self.callback_count(pt, "down", "southeast"):
+            if self.callback_count(pt, DIRECTION_DOWN, DIRECTION_SOUTHEAST):
                 break
-        if self.callback_end("down"):
+        if self.callback_end(DIRECTION_DOWN):
             return True
 
         # test up (/)
-        self.callback_begin("up")
+        self.callback_begin(DIRECTION_UP)
         for k in range(min(WIN_NUM-1, h, w)):
             pt = (h-k-1, w-k-1)
-            if self.callback_count(pt, "up", "southwest"):
+            if self.callback_count(pt, DIRECTION_UP, DIRECTION_SOUTHWEST):
                 break
         for k in range(min(WIN_NUM-1, HEIGHT-h-1, WIDTH-w-1)):
             pt = (h+k+1, w+k+1)
-            if self.callback_count(pt, "up", "northeast"):
+            if self.callback_count(pt, DIRECTION_UP, DIRECTION_NORTHEAST):
                 break
-        if self.callback_end("up"):
+        if self.callback_end(DIRECTION_UP):
             return True
 
         return False
@@ -308,10 +340,10 @@ class Bot():
         (point_h, point_w) = pt
         self.board[point_h][point_w] = test_side
         if self.detect_positions_around_point(point_h, point_w):
-            self.board[point_h][point_w] = BLANK
+            self.board[point_h][point_w] = BLANK_ID
             return True
 
-        self.board[point_h][point_w] = BLANK
+        self.board[point_h][point_w] = BLANK_ID
         return False
 
 
@@ -322,8 +354,8 @@ class Bot():
     def callback_count_chain(self, pt, where, part):
         if self.board[pt[0]][pt[1]] != self.center_side:
             return True
-        self.direction_chain_count[where] = self.direction_chain_count.get(where, 0) + 1
-        self.direction_chain_count[part] = self.direction_chain_count.get(part, 0) + 1
+        self.direction_chain_count[where] += 1
+        self.direction_chain_count[part] += 1
         return False
     def callback_end_chain(self, where):
         return False
@@ -334,10 +366,11 @@ class Bot():
         # 单排有效空间计数
         return
     def callback_count_space(self, pt, where, part):
-        if self.board[pt[0]][pt[1]] not in [self.center_side, BLANK]:
+        if self.board[pt[0]][pt[1]] == -self.center_side:
             return True
-        self.direction_space_count[where] = self.direction_space_count.get(where, 0) + 1
-        self.direction_space_count[part] = self.direction_space_count.get(part, 0) + 1
+
+        self.direction_space_count[where] += 1
+        self.direction_space_count[part] += 1
         return False
     def callback_end_space(self, where):
         return False
@@ -350,18 +383,15 @@ class Bot():
         if self.direction_space_count[where] < WIN_NUM:
             # 单排空间不足不计数
             return True
-
-        if self.board[pt[0]][pt[1]] == self.center_side:
-            pass
-        elif self.board[pt[0]][pt[1]] == BLANK:
-            counter = self.direction_chain_count[where]
-            is_part_link = self.direction_chain_count.get(part, 0)
-            if is_part_link < 0:
-                counter = 1
-            self.direction_chain_count[part] = -1
-            self.blank_points_with_count_pair += [(pt, counter)]
-        else:
+        if self.board[pt[0]][pt[1]] == -self.center_side:
             return True
+        if self.board[pt[0]][pt[1]] == BLANK_ID:
+            count = self.direction_chain_count[where]
+            is_part_link = self.direction_chain_count[part]
+            if is_part_link < 0:
+                count = 1
+            self.direction_chain_count[part] = -1
+            self.blank_points_with_count_pair += [(pt, count)]
         return False
     def callback_end_blank_points(self, where):
         return False
@@ -375,16 +405,16 @@ class Bot():
 
         h, w = point_h, point_w
         center_side = self.board[h][w]
-        if center_side == BLANK:
+        if center_side == BLANK_ID:
             return []
 
-        self.direction_space_count = {}
+        self.direction_space_count = [0] * 12
         self.callback_count = self.callback_count_space
         self.callback_end = self.callback_end_space
         self.callback_begin = self.callback_begin_space
         self.detect_positions_around_point(point_h, point_w)
 
-        self.direction_chain_count = {}
+        self.direction_chain_count = [0] * 12
         self.callback_count = self.callback_count_chain
         self.callback_end = self.callback_end_chain
         self.callback_begin = self.callback_begin_chain
@@ -417,10 +447,10 @@ class Bot():
         for point_h, point_w in all_my_points:
             # 获取每一个棋子周围能影响到的空白的位置坐标
             blank_points_around_hw = self.get_all_blank_points_around_point(point_h, point_w)
-            for pt, counter in blank_points_around_hw:
+            for pt, count in blank_points_around_hw:
                 if not is_dup_enforce:
-                    counter = 1
-                all_my_blank_points_count[pt] = all_my_blank_points_count.get(pt, 0) + counter
+                    count = 1
+                all_my_blank_points_count[pt] = all_my_blank_points_count.get(pt, 0) + count
 
         if not all_my_blank_points_count:
             return []
@@ -486,14 +516,14 @@ class Bot():
             if self.win_test(my_pt, my_side):
                 count_win_point += 1
                 if count_win_point > 1:
-                    self.board[point_h][point_w] = BLANK
+                    self.board[point_h][point_w] = BLANK_ID
                     return True
 
         tested_not_good_pt = []
         for my_pt, count in all_my_blank_points_count_pair:
             tested_not_good_pt += [my_pt]
             if not self.is_a_bad_choice(my_pt, your_side, my_side, max_level=max_level):
-                self.board[point_h][point_w] = BLANK
+                self.board[point_h][point_w] = BLANK_ID
                 return False
 
         is_dup_enforce = False
@@ -502,10 +532,10 @@ class Bot():
         for your_pt, count in all_your_blank_points_count_pair:
             if your_pt in tested_not_good_pt: continue
             if not self.is_a_bad_choice(your_pt, your_side, my_side, max_level=max_level):
-                self.board[point_h][point_w] = BLANK
+                self.board[point_h][point_w] = BLANK_ID
                 return False
 
-        self.board[point_h][point_w] = BLANK
+        self.board[point_h][point_w] = BLANK_ID
         return True
 
 
@@ -526,14 +556,14 @@ class Bot():
             # 先扫一遍有没有直接胜利的, count<4的点不可能胜利
             if count >= 4:
                 if self.win_test(your_pt, your_side):
-                    self.board[point_h][point_w] = BLANK
+                    self.board[point_h][point_w] = BLANK_ID
                     return True
         for your_pt, count in all_your_blank_points_count_pair:
             if count > 1:
                 # tofix: 不应该忽视count==1的点, 但为了减少计算
                 if self.is_a_good_choice(your_pt, your_side, my_side, max_level=max_level-1):
-                    self.board[point_h][point_w] = BLANK
+                    self.board[point_h][point_w] = BLANK_ID
                     return True
 
-        self.board[point_h][point_w] = BLANK
+        self.board[point_h][point_w] = BLANK_ID
         return False

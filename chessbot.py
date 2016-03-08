@@ -56,7 +56,7 @@ def main():
 
 def strategy(self):
     # 测试AI
-    if self.my_side == chess.BLACK:
+    if self.my_side == chess.BLACK_ID:
         #return strategy4(self, 0, True)
         return strategy6(self, 0, True,
                          max_level_good = 2,
@@ -247,7 +247,7 @@ def strategy2(self):
     # 纯逆序
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
-            if self.board[chess.HEIGHT-h-1][chess.WIDTH-w-1] == chess.BLANK:
+            if self.board[chess.HEIGHT-h-1][chess.WIDTH-w-1] == chess.BLANK_ID:
                 return chess.HEIGHT-h-1, chess.WIDTH-w-1
 
 
@@ -256,7 +256,7 @@ def strategy1(self):
     # 纯顺序
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
-            if self.board[h][w] == chess.BLANK:
+            if self.board[h][w] == chess.BLANK_ID:
                 return h, w
 
 
