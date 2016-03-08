@@ -408,13 +408,13 @@ class Bot():
         if center_side == BLANK_ID:
             return []
 
-        self.direction_space_count = [0] * 12
+        self.direction_space_count = [1] * 12
         self.callback_count = self.callback_count_space
         self.callback_end = self.callback_end_space
         self.callback_begin = self.callback_begin_space
         self.detect_positions_around_point(point_h, point_w)
 
-        self.direction_chain_count = [0] * 12
+        self.direction_chain_count = [1] * 12
         self.callback_count = self.callback_count_chain
         self.callback_end = self.callback_end_chain
         self.callback_begin = self.callback_begin_chain
@@ -465,34 +465,6 @@ class Bot():
             ", ".join(["%s:%d" % (get_notename_of_point(h, w), count)
                        for (h, w), count in all_my_blank_points_count_pair if count > 3])), level="DEBUG")
         return all_my_blank_points_count_pair
-
-
-    def get_score_of_blanks_for_both_sides(self,
-                                           defence_level=0,
-                                           is_dup_enforce=False):
-        # is_dup_enforce: 连珠对附近空白是否有加分
-        # defence_level: 防御权重, 越大越重视防御
-        #
-        # 统计双方所有棋子米字形线条交汇计数最高的空白(ME, YOU)
-        # max(points_score) = max((your's + defence) JOIN (mine))
-        #
-        all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(self.my_side,
-                                                                       is_dup_enforce=is_dup_enforce)
-        all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(self.your_side,
-                                                                       is_dup_enforce=is_dup_enforce)
-        all_blank_points_count = {}
-        for pt, count in all_your_blank_points_count_pair:
-            all_blank_points_count[pt] = count + defence_level
-
-        for pt, count in all_my_blank_points_count_pair:
-            all_blank_points_count[pt] = all_blank_points_count.get(pt, 0) + count
-
-        all_blank_points_count_pair = all_blank_points_count.items()
-        all_blank_points_count_pair.sort(key=lambda x:x[1])
-        all_blank_points_count_pair.reverse()
-
-        return all_blank_points_count_pair
-
 
 
     def is_a_good_choice(self, choice_pt, my_side, your_side, max_level=-1):
