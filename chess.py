@@ -36,6 +36,7 @@ NOTE_TO_ID = {
 }
 ID_TO_NOTE = [BLANK, BLACK, BLACK_WIN, WHITE_WIN, WHITE]
 
+POINT_NEED_UPDATE = 12
 DIRECTION_ROW = 0
 DIRECTION_WEST = 1
 DIRECTION_EAST = 2
@@ -92,10 +93,13 @@ class Bot():
         self.board_separate_line = "- " * WIDTH
         self.notes = []
 
-        self.direction_space_count_cache_at_point = [ [[[None, False, False],
-                                                        [], []] for w in range(WIDTH)]
+        self.direction_space_count_cache_at_point = [ [[1] * 13
+                                                       for w in range(WIDTH)]
                                                       for h in range(HEIGHT)]
-        
+        self.direction_chain_count_cache_at_point = [ [[1] * 13
+                                                       for w in range(WIDTH)]
+                                                      for h in range(HEIGHT)]
+
     def board_dumps(self):
         print >> sys.stderr, "   " + self.board_separate_line
 
@@ -380,19 +384,32 @@ class Bot():
 
 
     def callback_begin_space_cache(self, where):
-        # 单排有效空间计数
+        # 有效空间缓存purge
         return
     def callback_count_space_cache(self, pt, where, part):
         h, w = pt
         if self.board[h][w] == self.center_side:
             return True
         if self.board[h][w] == -self.center_side:
-            self.direction_space_count_cache_at_point[h][w][0][-self.center_side] = False
+            self.direction_space_count_cache_at_point[h][w][POINT_NEED_UPDATE] = 1
         return False
     def callback_end_space_cache(self, where):
         return False
 
-    
+
+    def callback_begin_chain_cache(self, where):
+        # 单排连珠计数缓存purge
+        return
+    def callback_count_chain_cache(self, pt, where, part):
+        h, w = pt
+        if self.board[h][w] == self.center_side:
+            self.direction_chain_count_cache_at_point[h][w][POINT_NEED_UPDATE] = 1
+            return False
+        return True
+    def callback_end_chain_cache(self, where):
+        return False
+
+
     def callback_begin_blank_points(self, where):
         # 寻找焦点上的blank
         return
@@ -414,6 +431,20 @@ class Bot():
         return False
 
 
+    def do_some_cache_update_around_point(self, point_h, point_w):
+        self.direction_space_count_cache_at_point[point_h][point_w][POINT_NEED_UPDATE] = 1
+        self.callback_count = self.callback_count_space_cache
+        self.callback_end = self.callback_end_space_cache
+        self.callback_begin = self.callback_begin_space_cache
+        self.detect_positions_around_point(point_h, point_w)
+
+        self.direction_chain_count_cache_at_point[point_h][point_w][POINT_NEED_UPDATE] = 1
+        self.callback_count = self.callback_count_chain_cache
+        self.callback_end = self.callback_end_chain_cache
+        self.callback_begin = self.callback_begin_chain_cache
+        self.detect_positions_around_point(point_h, point_w)
+
+
     def get_all_blank_points_around_point(self, point_h, point_w):
         # 棋子周围能"有效影响"的空白的位置坐标
         # 其中:
@@ -425,24 +456,21 @@ class Bot():
         if center_side == BLANK_ID:
             return []
 
-        if not self.direction_space_count_cache_at_point[h][w][0][center_side]:
-            self.direction_space_count_cache_at_point[h][w][center_side] = [1] * 12
-            self.direction_space_count_cache_at_point[h][w][0][center_side] = True
-            self.direction_space_count = self.direction_space_count_cache_at_point[h][w][center_side]
-            
+        self.direction_space_count = self.direction_space_count_cache_at_point[h][w]
+        if self.direction_space_count[POINT_NEED_UPDATE] == 1:
+            self.direction_space_count[POINT_NEED_UPDATE] = 0
             self.callback_count = self.callback_count_space
             self.callback_end = self.callback_end_space
             self.callback_begin = self.callback_begin_space
             self.detect_positions_around_point(point_h, point_w)
-        else:
-            self.direction_space_count = self.direction_space_count_cache_at_point[h][w][center_side]
-        
 
-        self.direction_chain_count = [1] * 12
-        self.callback_count = self.callback_count_chain
-        self.callback_end = self.callback_end_chain
-        self.callback_begin = self.callback_begin_chain
-        self.detect_positions_around_point(point_h, point_w)
+        self.direction_chain_count = self.direction_chain_count_cache_at_point[h][w]
+        if self.direction_chain_count[POINT_NEED_UPDATE] == 1:
+            self.direction_chain_count[POINT_NEED_UPDATE] = 0
+            self.callback_count = self.callback_count_chain
+            self.callback_end = self.callback_end_chain
+            self.callback_begin = self.callback_begin_chain
+            self.detect_positions_around_point(point_h, point_w)
 
         self.blank_points_with_count_pair = []
         self.callback_count = self.callback_count_blank_points
@@ -498,7 +526,7 @@ class Bot():
 
         (point_h, point_w) = choice_pt
         self.board[point_h][point_w] = my_side
-        self.space_cache_need_update_around_point(point_h, point_w)                                
+        self.do_some_cache_update_around_point(point_h, point_w)
         chess_log("%s TEST GOOD CHOICE[%d]: %s" % (my_side, max_level,
                                                   get_notename_of_point(point_h, point_w)), level="DEBUG")
 
@@ -513,7 +541,7 @@ class Bot():
             if self.win_test(my_pt, my_side):
                 count_win_point += 1
                 if count_win_point > 1:
-                    self.space_cache_need_update_around_point(point_h, point_w)                                
+                    self.do_some_cache_update_around_point(point_h, point_w)
                     self.board[point_h][point_w] = BLANK_ID
                     return True
 
@@ -521,7 +549,7 @@ class Bot():
         for my_pt, count in all_my_blank_points_count_pair:
             tested_not_good_pt += [my_pt]
             if not self.is_a_bad_choice(my_pt, your_side, my_side, max_level=max_level):
-                self.space_cache_need_update_around_point(point_h, point_w)                                
+                self.do_some_cache_update_around_point(point_h, point_w)
                 self.board[point_h][point_w] = BLANK_ID
                 return False
 
@@ -531,22 +559,15 @@ class Bot():
         for your_pt, count in all_your_blank_points_count_pair:
             if your_pt in tested_not_good_pt: continue
             if not self.is_a_bad_choice(your_pt, your_side, my_side, max_level=max_level):
-                self.space_cache_need_update_around_point(point_h, point_w)                                
+                self.do_some_cache_update_around_point(point_h, point_w)
                 self.board[point_h][point_w] = BLANK_ID
                 return False
 
-        self.space_cache_need_update_around_point(point_h, point_w)                                
+        self.do_some_cache_update_around_point(point_h, point_w)
         self.board[point_h][point_w] = BLANK_ID
         return True
 
 
-    def space_cache_need_update_around_point(self, point_h, point_w):
-        self.callback_count = self.callback_count_space_cache
-        self.callback_end = self.callback_end_space_cache
-        self.callback_begin = self.callback_begin_space_cache
-        self.detect_positions_around_point(point_h, point_w)
-
-        
     def is_a_bad_choice(self, choice_pt, my_side, your_side, max_level=-1):
         # todo: 层序遍历, 最高得分先检查
         if max_level == 0:
@@ -554,7 +575,7 @@ class Bot():
 
         (point_h, point_w) = choice_pt
         self.board[point_h][point_w] = my_side
-        self.space_cache_need_update_around_point(point_h, point_w)
+        self.do_some_cache_update_around_point(point_h, point_w)
         chess_log("%s TEST BAD CHOICE[%d]: %s" % (my_side, max_level,
                                                   get_notename_of_point(point_h, point_w)), level="DEBUG")
 
@@ -565,17 +586,17 @@ class Bot():
             # 先扫一遍有没有直接胜利的, count<4的点不可能胜利
             if count >= 4:
                 if self.win_test(your_pt, your_side):
-                    self.space_cache_need_update_around_point(point_h, point_w)                    
+                    self.do_some_cache_update_around_point(point_h, point_w)
                     self.board[point_h][point_w] = BLANK_ID
                     return True
         for your_pt, count in all_your_blank_points_count_pair:
             if count > 1:
                 # tofix: 不应该忽视count==1的点, 但为了减少计算
                 if self.is_a_good_choice(your_pt, your_side, my_side, max_level=max_level-1):
-                    self.space_cache_need_update_around_point(point_h, point_w)                                        
+                    self.do_some_cache_update_around_point(point_h, point_w)
                     self.board[point_h][point_w] = BLANK_ID
                     return True
 
-        self.space_cache_need_update_around_point(point_h, point_w)                                    
+        self.do_some_cache_update_around_point(point_h, point_w)
         self.board[point_h][point_w] = BLANK_ID
         return False

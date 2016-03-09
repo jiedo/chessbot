@@ -65,7 +65,7 @@ def strategy(self):
         #return strategy4(self, 0, True)
         return strategy6(self, 0, True,
                          max_level_good = 2,
-                         max_level_bad = 3)
+                         max_level_bad = 2)
 
 
 def strategy6(self, defence_level, is_dup_enforce,
