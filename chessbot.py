@@ -65,8 +65,8 @@ def strategy(self):
     else:
         #return strategy4(self, 0, True)
         return strategy6(self, 0, True,
-                         max_level_good = 2,
-                         max_level_bad = 3)
+                         max_level_good = 4,
+                         max_level_bad = 4)
 
 
 def strategy6(self, defence_level, is_dup_enforce,
@@ -97,70 +97,68 @@ def strategy6(self, defence_level, is_dup_enforce,
             if self.win_test(pt, self.your_side):
                 return pt
 
-    tested_not_good_pt = []
-    # make a better choice
-    for pt, count in all_my_blank_points_count_pair:
-        tested_not_good_pt += [pt]
-        if self.is_a_good_choice(pt, self.my_side, self.your_side, max_level=max_level_good):
-            chess.chess_log("%s GOOD at my: %s" % (chess.ID_TO_NOTE[self.my_side],
-                                             chess.get_label_of_point(pt[0], pt[1])))
-            return pt
-    for pt, count in all_your_blank_points_count_pair:
-        if pt in tested_not_good_pt: continue
-        if self.is_a_good_choice(pt, self.my_side, self.your_side, max_level=max_level_good):
-            chess.chess_log("%s GOOD at your: %s" % (chess.ID_TO_NOTE[self.my_side],
-                                             chess.get_label_of_point(pt[0], pt[1])))
-            return pt
-
-    tested_bad_pt = []
-    # don't make a bad choice
-    for pt, count in all_my_blank_points_count_pair:
-        if count > 2:
-            if self.is_a_bad_choice(pt, self.my_side, self.your_side, max_level=max_level_bad):
-                chess.chess_log("%s BAD at my: %s" % (chess.ID_TO_NOTE[self.my_side],
-                                                 chess.get_label_of_point(pt[0], pt[1])))
-                tested_bad_pt += [pt]
-    for pt, count in all_your_blank_points_count_pair:
-        if count > 2:
-            if self.is_a_bad_choice(pt, self.my_side, self.your_side, max_level=max_level_bad):
-                chess.chess_log("%s BAD at your: %s" % (chess.ID_TO_NOTE[self.my_side],
-                                                 chess.get_label_of_point(pt[0], pt[1])))
-                tested_bad_pt += [pt]
-
     all_blank_points_count = {}
     for pt, count in all_your_blank_points_count_pair:
-        if pt in tested_bad_pt: continue
-        all_blank_points_count[pt] = count + defence_level
+        if count > 1:
+            all_blank_points_count[pt] = count + defence_level
     for pt, count in all_my_blank_points_count_pair:
-        if pt in tested_bad_pt: continue
-        all_blank_points_count[pt] = all_blank_points_count.get(pt, 0) + count
+        if count > 1:
+            all_blank_points_count[pt] = max(all_blank_points_count.get(pt, 0), count)
 
     all_blank_points_count_pair = all_blank_points_count.items()
     all_blank_points_count_pair.sort(key=lambda x:x[1])
     all_blank_points_count_pair.reverse()
 
-    if all_blank_points_count_pair:
-        _, max_count = all_blank_points_count_pair[0]
-        chess.chess_log("all: %d, max_count: %d" % (len(all_blank_points_count_pair), max_count))
+    # make a batter choice
+    for pt, count in all_blank_points_count_pair:
+        if self.win_test(pt, self.my_side):
+            return pt
+    # make a batter choice
+    for level_good in range(1, max_level_good):
+        for pt, count in all_blank_points_count_pair:
+            if self.is_a_good_choice(pt, self.my_side, self.your_side, max_level=level_good):
+                chess.chess_log("%s GOOD at: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                                    chess.get_label_of_point(pt[0], pt[1])))
+                return pt
 
-        candidates = [pt for pt, count in all_blank_points_count_pair if count == max_count]
+    blank_points_not_bad = []
+    max_deep_bad_point_pt = (0, 0)
+    max_deep_bad_point_count = 0
+    max_deep_bad_point_level = 0
+    # don't make a bad choice
+    for pt, count in all_blank_points_count_pair:
+        is_bad = False
+        for level_bad in range(1, max_level_bad):
+            if self.is_a_bad_choice(pt, self.my_side, self.your_side, max_level=level_bad):
+                chess.chess_log("%s BAD at: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                                   chess.get_label_of_point(pt[0], pt[1])))
+                if level_bad > max_deep_bad_point_level:
+                    max_deep_bad_point_level = level_bad
+                    max_deep_bad_point_pt = pt
+                    max_deep_bad_point_count = count
+                elif level_bad == max_deep_bad_point_level:
+                    if max_deep_bad_point_count < count:
+                        max_deep_bad_point_pt = pt
+                        max_deep_bad_point_count = count
+                is_bad = True
+                break
+        if not is_bad:
+            blank_points_not_bad += [(pt, count)]
+
+    if blank_points_not_bad:
+        _, max_count = blank_points_not_bad[0]
+        chess.chess_log("points not bad: %d, max_count: %d" % (len(blank_points_not_bad), max_count))
+        candidates = [pt for pt, count in blank_points_not_bad if count == max_count]
         pt = random.choice(candidates)
         chess.chess_log("%s No.6 give: %s" % (chess.ID_TO_NOTE[self.my_side],
                                               chess.get_label_of_point(pt[0], pt[1])))
         return pt
 
-    chess.chess_log("no good choice, random choice.")
-    if all_your_blank_points_count_pair:
-        your_pt, your_max_count = all_your_blank_points_count_pair[0]
-        if all_my_blank_points_count_pair:
-            my_pt, my_max_count = all_my_blank_points_count_pair[0]
-            if defence_level + your_max_count <= my_max_count:
-                candidates = [pt for pt, count in all_my_blank_points_count_pair if count == my_max_count]
-                return random.choice(candidates)
+    chess.chess_log("no good choice.")
+    if all_blank_points_count_pair:
+        return max_deep_bad_point_pt
 
-        candidates = [pt for pt, count in all_your_blank_points_count_pair if count == your_max_count]
-        return random.choice(candidates)
-
+    chess.chess_log("first point.")
     return (chess.HEIGHT/2, chess.WIDTH/2)
 
 

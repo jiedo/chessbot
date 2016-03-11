@@ -690,10 +690,26 @@ class Bot():
                     self.update_remove_around_point(point_h, point_w)
                     self.set_board_at_point((point_h, point_w), BLANK_ID)
                     return True
+
         for your_pt, count in all_your_blank_points_count_pair:
             if count > 2:
                 # tofix: 不应该忽视count==1的点, 但为了减少计算
                 if self.is_a_good_choice(your_pt, your_side, my_side, max_level=max_level-1):
+                    chess_log("%s GET GOOD CHOICE[%d]: %s" % (
+                        ID_TO_NOTE[your_side], max_level-1,
+                        get_label_of_point(your_pt[0], your_pt[1])), level="DEBUG")
+
+                    self.update_remove_around_point(point_h, point_w)
+                    self.set_board_at_point((point_h, point_w), BLANK_ID)
+                    return True
+
+        is_dup_enforce = True
+        all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(my_side,
+                                                                           is_dup_enforce=is_dup_enforce)
+        for my_pt, count in all_my_blank_points_count_pair:
+            if count > 2:
+                # tofix: 不应该忽视count==1的点, 但为了减少计算
+                if self.is_a_good_choice(my_pt, your_side, my_side, max_level=max_level-1):
                     chess_log("%s GET GOOD CHOICE[%d]: %s" % (
                         ID_TO_NOTE[your_side], max_level-1,
                         get_label_of_point(your_pt[0], your_pt[1])), level="DEBUG")
