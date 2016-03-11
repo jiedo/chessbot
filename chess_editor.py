@@ -204,7 +204,7 @@ def main():
             # 检测对方是否获胜
             if bot.is_winner(bot.your_side):
                 bot.light_on_win_points()
-                chess.chess_log("Notes: %d" % (len(bot.notes)))
+                bot.notes_dumps()
                 time.sleep(0.1)
                 bot.board_dumps()
                 break
@@ -226,7 +226,7 @@ def main():
 
         # 检测自己是否获胜
         if bot.is_winner(bot.my_side):
-            chess.chess_log("%s Win." % bot.my_side)
+            chess.chess_log("%s Win." % chess.ID_TO_NOTE[bot.my_side])
             break
 
 

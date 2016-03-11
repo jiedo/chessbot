@@ -34,9 +34,9 @@ def main():
         # 检测对方是否获胜
         if bot.is_winner(bot.your_side):
             bot.light_on_win_points()
-            chess.chess_log("Notes: %d" % (len(bot.notes)))
             time.sleep(0.1)
             bot.board_dumps()
+            bot.notes_dumps()
             break
 
         # 回调自己的策略
@@ -50,7 +50,8 @@ def main():
 
         # 检测自己是否获胜
         if bot.is_winner(bot.my_side):
-            chess.chess_log("%s Win." % bot.my_side)
+            chess.chess_log("%s Win." % chess.ID_TO_NOTE[bot.my_side])
+            bot.notes_dumps()
             break
 
 
@@ -60,12 +61,12 @@ def strategy(self):
         #return strategy4(self, 0, True)
         return strategy6(self, 0, True,
                          max_level_good = 2,
-                         max_level_bad = 2)
+                         max_level_bad = 3)
     else:
         #return strategy4(self, 0, True)
         return strategy6(self, 0, True,
                          max_level_good = 2,
-                         max_level_bad = 2)
+                         max_level_bad = 3)
 
 
 def strategy6(self, defence_level, is_dup_enforce,
@@ -101,14 +102,14 @@ def strategy6(self, defence_level, is_dup_enforce,
     for pt, count in all_my_blank_points_count_pair:
         tested_not_good_pt += [pt]
         if self.is_a_good_choice(pt, self.my_side, self.your_side, max_level=max_level_good):
-            chess.chess_log("%s GOOD: %s" % (self.my_side,  chess.get_notename_of_point(pt[0], pt[1])),
-                            level="DEBUG")
+            chess.chess_log("%s GOOD at my: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                             chess.get_label_of_point(pt[0], pt[1])))
             return pt
     for pt, count in all_your_blank_points_count_pair:
         if pt in tested_not_good_pt: continue
         if self.is_a_good_choice(pt, self.my_side, self.your_side, max_level=max_level_good):
-            chess.chess_log("%s GOOD: %s" % (self.my_side,  chess.get_notename_of_point(pt[0], pt[1])),
-                            level="DEBUG")
+            chess.chess_log("%s GOOD at your: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                             chess.get_label_of_point(pt[0], pt[1])))
             return pt
 
     tested_bad_pt = []
@@ -116,14 +117,14 @@ def strategy6(self, defence_level, is_dup_enforce,
     for pt, count in all_my_blank_points_count_pair:
         if count > 2:
             if self.is_a_bad_choice(pt, self.my_side, self.your_side, max_level=max_level_bad):
-                chess.chess_log("%s BAD : %s" % (self.my_side,  chess.get_notename_of_point(pt[0], pt[1])),
-                                level="DEBUG")
+                chess.chess_log("%s BAD at my: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                                 chess.get_label_of_point(pt[0], pt[1])))
                 tested_bad_pt += [pt]
     for pt, count in all_your_blank_points_count_pair:
         if count > 2:
             if self.is_a_bad_choice(pt, self.my_side, self.your_side, max_level=max_level_bad):
-                chess.chess_log("%s BAD : %s" % (self.my_side,  chess.get_notename_of_point(pt[0], pt[1])),
-                                level="DEBUG")
+                chess.chess_log("%s BAD at your: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                                 chess.get_label_of_point(pt[0], pt[1])))
                 tested_bad_pt += [pt]
 
     all_blank_points_count = {}
@@ -140,13 +141,15 @@ def strategy6(self, defence_level, is_dup_enforce,
 
     if all_blank_points_count_pair:
         _, max_count = all_blank_points_count_pair[0]
+        chess.chess_log("all: %d, max_count: %d" % (len(all_blank_points_count_pair), max_count))
+
         candidates = [pt for pt, count in all_blank_points_count_pair if count == max_count]
         pt = random.choice(candidates)
-        chess.chess_log("%s No.6 give: %s" % (self.my_side,  chess.get_notename_of_point(pt[0], pt[1])),
-                        level="DEBUG")
+        chess.chess_log("%s No.6 give: %s" % (chess.ID_TO_NOTE[self.my_side],
+                                              chess.get_label_of_point(pt[0], pt[1])))
         return pt
 
-    # all choices are not good
+    chess.chess_log("no good choice, random choice.")
     if all_your_blank_points_count_pair:
         your_pt, your_max_count = all_your_blank_points_count_pair[0]
         if all_my_blank_points_count_pair:
@@ -232,7 +235,7 @@ def strategy3(self):
     all_my_points = [random_point]
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
-            if self.board[h][w] != self.my_side:
+            if self.get_board_at_point((h, w)) != self.my_side:
                 continue
             all_my_points += [(h, w)]
 
@@ -247,8 +250,9 @@ def strategy2(self):
     # 纯逆序
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
-            if self.board[chess.HEIGHT-h-1][chess.WIDTH-w-1] == chess.BLANK_ID:
-                return chess.HEIGHT-h-1, chess.WIDTH-w-1
+            pt = (chess.HEIGHT-h-1, chess.WIDTH-w-1)
+            if self.get_board_at_point(pt) == self.BLANK_ID:
+                return pt
 
 
 def strategy1(self):
@@ -256,8 +260,9 @@ def strategy1(self):
     # 纯顺序
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
-            if self.board[h][w] == chess.BLANK_ID:
-                return h, w
+            pt = (h, w)
+            if self.get_board_at_point(pt) == self.BLANK_ID:
+                return pt
 
 
 def strategy0(self):

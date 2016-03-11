@@ -43,12 +43,12 @@ chessbot.py中的main函数已实现一个bot框架, 按顺序处理了通信. �
 
     def strategy(self):
         # 棋盘:
-        # self.board[h][w]
+        # self.board[h][w][chess.POINT_NOTE]
         # 此demo逻辑为顺序落子
         #
         for h in range(chess.HEIGHT):
             for w in range(chess.WIDTH):
-                if self.board[h][w] == chess.BLANK:
+                if self.board[h][w][chess.POINT_NOTE] == chess.BLANK:
                     return h, w
 
 或者重写main函数, 仅仅使用chess.Bot代码来构建更灵活AI, 只要依据回合制顺序通信即可.

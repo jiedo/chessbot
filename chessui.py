@@ -53,7 +53,7 @@ def get_click_point(pos_click):
     return (int_cw, int_ch)
 
 
-def draw_board(surface, chess_board):
+def draw_board(surface, chess_bot):
     line_color = 40, 80, 40
     background_color = 100, 100, 100
     black_color = 10, 10, 10
@@ -100,7 +100,7 @@ def draw_board(surface, chess_board):
 
     for h in range(chess.HEIGHT):
         for w in range(chess.WIDTH):
-            test_side = chess_board[chess.HEIGHT-h-1][w]
+            test_side = chess_bot.get_board_at_point((chess.HEIGHT-h-1, w))
             if test_side == chess.BLANK_ID:
                 continue
 
@@ -111,6 +111,9 @@ def draw_board(surface, chess_board):
                 color = black_color
             elif test_side == chess.WHITE_ID:
                 color = white_color
+            else:
+                chess_log("error in draw_board: note '%s' is illegal." % test_side)
+
             radius = int(CHESSMAN_SIZE * 0.309)
             width = radius
             pygame.draw.circle(surface, color, pos, radius, width)
@@ -146,7 +149,7 @@ def main():
     bot = chess.Bot()
     while True:
         ################
-        draw_board(screen, bot.board)
+        draw_board(screen, bot)
         pygame.display.update()
         for e in pygame.event.get():
             if e.type == QUIT or (e.type == KEYUP and e.key == K_ESCAPE):
@@ -168,9 +171,9 @@ def main():
         # 检测对方是否获胜
         if bot.is_winner(bot.your_side):
             bot.light_on_win_points()
-            chess.chess_log("Notes: %d" % (len(bot.notes)))
             time.sleep(0.1)
             bot.board_dumps()
+            bot.notes_dumps()
             break
 
         # 读取ui点击
@@ -189,7 +192,7 @@ def main():
 
         # 检测自己是否获胜
         if bot.is_winner(bot.my_side):
-            chess.chess_log("%s Win." % bot.my_side)
+            chess.chess_log("%s Win." % chess.ID_TO_NOTE[bot.my_side])
             break
 
 
