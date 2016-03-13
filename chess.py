@@ -712,7 +712,7 @@ class Bot():
                 if self.is_a_good_choice(my_pt, your_side, my_side, max_level=max_level-1):
                     chess_log("%s GET GOOD CHOICE[%d]: %s" % (
                         ID_TO_NOTE[your_side], max_level-1,
-                        get_label_of_point(your_pt[0], your_pt[1])), level="DEBUG")
+                        get_label_of_point(my_pt[0], my_pt[1])), level="DEBUG")
 
                     self.update_remove_around_point(point_h, point_w)
                     self.set_board_at_point((point_h, point_w), BLANK_ID)

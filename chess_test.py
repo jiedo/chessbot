@@ -72,8 +72,8 @@ def main():
     #     print chess.get_label_of_point(pt[0], pt[1]), count
 
     h, w = strategy6(bot, 0, True,
-                     max_level_good = 4,
-                     max_level_bad = 5)
+                     max_level_good = 3,
+                     max_level_bad = 3)
 
     bot.put_chessman_at_point(bot.side_this_turn, h, w)
     bot.board_dumps()
