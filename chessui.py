@@ -23,7 +23,7 @@ WINSIZE = [SCREEN_WIDTH, SCREEN_HEIGHT]
 
 g_point_to_put = [0, 0]
 g_show_point_to_put = [SCREEN_WIDTH/2, SCREEN_HEIGHT/2]
-
+g_last_point_to_put = [0, 0]
 
 def get_click_point(pos_click):
     cw, ch = pos_click
@@ -55,15 +55,17 @@ def get_click_point(pos_click):
 
 def draw_board(surface, chess_bot):
     line_color = 40, 80, 40
-    background_color = 100, 100, 100
+    background_color = 150, 150, 150
     black_color = 10, 10, 10
-    white_color = 240, 240, 240
+    white_color = 250, 250, 250
+
+    last_put_color = 40, 80, 40
     click_color = 40, 80, 40
     font_color = 250, 240, 230
     surface.fill(background_color)
 
     line_width = 2
-    chess_label_font = pygame.font.SysFont("Arial", 12)
+    chess_label_font = pygame.font.SysFont("Arial", 12,  bold=True)
 
     cw, ch = get_click_point(g_show_point_to_put)
     if cw is not None and ch is not None:
@@ -71,6 +73,14 @@ def draw_board(surface, chess_bot):
                            (BOARD_LEFT + cw * CHESSMAN_SIZE,
                             BOARD_TOP + ch * CHESSMAN_SIZE),
                            CHESSMAN_SIZE/2, line_width)
+
+    cw, ch = get_click_point(g_last_point_to_put)
+    if cw is not None and ch is not None:
+        pygame.draw.circle(surface, last_put_color,
+                           (BOARD_LEFT + cw * CHESSMAN_SIZE,
+                            BOARD_TOP + ch * CHESSMAN_SIZE),
+                           CHESSMAN_SIZE/2, line_width)
+
 
     for h in range(chess.HEIGHT):
         start_pos = (BOARD_LEFT,
@@ -122,7 +132,7 @@ def draw_board(surface, chess_bot):
 def main():
     # 默认实现成回调strategy()模式,
     # 但可以实现成更复杂模式, 符合bot通信协议即可
-    global g_point_to_put, g_show_point_to_put
+    global g_point_to_put, g_show_point_to_put, g_last_point_to_put
 
     sleep_time = 0.01
     show_verbose = False
@@ -158,8 +168,9 @@ def main():
             elif e.type == MOUSEMOTION:
                 g_show_point_to_put = list(e.pos)
             elif e.type == MOUSEBUTTONDOWN and e.button == 1:
-                g_point_to_put[:] = list(e.pos)
                 g_show_point_to_put = list(e.pos)
+                g_point_to_put[:] = list(e.pos)
+                g_last_point_to_put = list(e.pos)
         if done: break
         clock.tick(10)
         ################
@@ -167,6 +178,10 @@ def main():
         # 首先读取对方的落子位置, 并写入棋盘
         while bot.side_this_turn == bot.your_side:
             h, w = bot.get_point_of_chessman(bot.your_side)
+            if bot.side_this_turn != bot.your_side and h and w:
+                ch, cw = chess.HEIGHT-h-1, w
+                g_last_point_to_put = [BOARD_LEFT + cw * CHESSMAN_SIZE,
+                                       BOARD_TOP + ch * CHESSMAN_SIZE]
 
         # 检测对方是否获胜
         if bot.is_winner(bot.your_side):
@@ -180,6 +195,7 @@ def main():
         cw, ch = get_click_point(g_point_to_put)
         if cw is None or ch is None:
             continue
+
         g_point_to_put = [0, 0]
         h, w = chess.HEIGHT-ch-1, cw
 
