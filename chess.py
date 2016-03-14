@@ -617,31 +617,21 @@ class Bot():
 
 
     def is_a_good_choice(self, choice_pt, my_side, your_side, max_level=-1):
+        (point_h, point_w) = choice_pt
+        chess_log("%s TEST GOOD CHOICE[%d]: %s" % (ID_TO_NOTE[my_side], max_level,
+                                                  get_label_of_point(point_h, point_w)), level="DEBUG")
+        if self.win_test(choice_pt, my_side):
+            return True
+
         # todo: 层序遍历, 最高得分先检查
         if max_level == 0:
             return False
 
-        (point_h, point_w) = choice_pt
         self.set_board_at_point((point_h, point_w), my_side)
         self.update_put_around_point(point_h, point_w)
-        chess_log("%s TEST GOOD CHOICE[%d]: %s" % (ID_TO_NOTE[my_side], max_level,
-                                                  get_label_of_point(point_h, point_w)), level="DEBUG")
-
         is_dup_enforce = True
         all_my_blank_points_count_pair = self.get_score_of_blanks_for_side(my_side,
                                                                            is_dup_enforce=is_dup_enforce)
-
-        count_win_point = 0
-        for my_pt, count in all_my_blank_points_count_pair:
-            # 先扫一遍有没有多处直接胜利的, count<4的点不可能胜利
-            if count < 4: continue
-            if self.win_test(my_pt, my_side):
-                count_win_point += 1
-                if count_win_point > 1:
-                    self.update_remove_around_point(point_h, point_w)
-                    self.set_board_at_point((point_h, point_w), BLANK_ID)
-                    return True
-
         tested_not_good_pt = []
         for my_pt, count in all_my_blank_points_count_pair:
             tested_not_good_pt += [my_pt]
@@ -670,15 +660,18 @@ class Bot():
 
 
     def is_a_bad_choice(self, choice_pt, my_side, your_side, max_level=-1):
+        (point_h, point_w) = choice_pt
+        chess_log("%s TEST BAD CHOICE[%d]: %s" % (ID_TO_NOTE[my_side], max_level,
+                                                  get_label_of_point(point_h, point_w)), level="DEBUG")
         # todo: 层序遍历, 最高得分先检查
         if max_level == 0:
             return False
 
-        (point_h, point_w) = choice_pt
+        if self.win_test(choice_pt, my_side):
+            return False
+
         self.set_board_at_point((point_h, point_w), my_side)
         self.update_put_around_point(point_h, point_w)
-        chess_log("%s TEST BAD CHOICE[%d]: %s" % (ID_TO_NOTE[my_side], max_level,
-                                                  get_label_of_point(point_h, point_w)), level="DEBUG")
 
         is_dup_enforce = True
         all_your_blank_points_count_pair = self.get_score_of_blanks_for_side(your_side,
