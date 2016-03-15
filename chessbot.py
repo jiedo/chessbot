@@ -39,6 +39,9 @@ def main():
             bot.notes_dumps()
             break
 
+        if len(bot.notes) > chess.HEIGHT*chess.WIDTH:
+            break
+
         # 回调自己的策略
         h, w = strategy(bot)
         # 写入棋盘并通知对方
@@ -52,6 +55,9 @@ def main():
         if bot.is_winner(bot.my_side):
             chess.chess_log("%s Win." % chess.ID_TO_NOTE[bot.my_side])
             bot.notes_dumps()
+            break
+
+        if len(bot.notes) > chess.HEIGHT*chess.WIDTH:
             break
 
 

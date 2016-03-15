@@ -191,6 +191,9 @@ def main():
             bot.notes_dumps()
             break
 
+        if len(bot.notes) > chess.HEIGHT*chess.WIDTH:
+            break
+
         # 读取ui点击
         cw, ch = get_click_point(g_point_to_put)
         if cw is None or ch is None:
@@ -209,6 +212,9 @@ def main():
         # 检测自己是否获胜
         if bot.is_winner(bot.my_side):
             chess.chess_log("%s Win." % chess.ID_TO_NOTE[bot.my_side])
+            break
+
+        if len(bot.notes) > chess.HEIGHT*chess.WIDTH:
             break
 
 
