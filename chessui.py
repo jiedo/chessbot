@@ -125,8 +125,7 @@ def draw_board(surface, chess_bot):
                 chess_log("error in draw_board: note '%s' is illegal." % test_side)
 
             radius = int(CHESSMAN_SIZE * 0.309)
-            width = radius
-            pygame.draw.circle(surface, color, pos, radius, width)
+            pygame.draw.circle(surface, color, pos, radius)
 
 
 def main():
